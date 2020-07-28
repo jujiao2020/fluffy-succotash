@@ -1,7 +1,7 @@
 {
-  "name": "jscp/social-sdk",
+  "name": "jcsp/social-sdk",
   "type": "library",
-  "version": "v1.0.0",
+  "version": "v0.0.1",
   "keywords": [
     "php",
     "sdk"
@@ -9,11 +9,21 @@
   "description": "social api sdk",
   "license": "Apache-2.0",
   "require": {
-    "php": ">7.1"
+    "php": ">7.2",
+    "ext-json": "*",
+    "ext-fileinfo": "*",
+    "abraham/twitteroauth": "^1.0",
+    "dirkgroenen/pinterest-api-php": "^0.2.12",
+    "facebook/graph-sdk": "^5.7",
+    "google/apiclient": "^2.0",
+    "guzzlehttp/guzzle": "^6.5",
+    "tumblr/tumblr": "^0.4.0",
+    "vimeo/vimeo-api": "^3.0",
+    "vkcom/vk-php-sdk": "^5.101"
   },
   "autoload": {
     "psr-4": {
-      "Jscp\\SocialSdk\\": "src/"
+      "Jcsp\\SocialSdk\\": "src/"
     }
   },
   "require-dev": {
