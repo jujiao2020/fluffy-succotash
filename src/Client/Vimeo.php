@@ -1,0 +1,261 @@
+<?php declare(strict_types=1);
+
+namespace Jcsp\SocialSdk\Client;
+
+
+use Jcsp\SocialSdk\Contract\ShareInterface;
+use Jcsp\SocialSdk\Exception\SocialSdkException;
+use Jcsp\SocialSdk\Model\AccessToken;
+use Jcsp\SocialSdk\Model\AuthConfig;
+use Jcsp\SocialSdk\Model\Channel;
+use Jcsp\SocialSdk\Model\UserProfile;
+use Jcsp\SocialSdk\Model\VideoShareParams;
+use Jcsp\SocialSdk\Model\VideoShareResult;
+
+class Vimeo extends OAuth2 implements ShareInterface
+{
+    /**
+     * @var \Vimeo\Vimeo
+     */
+    private $lib;
+
+    /**
+     * 默认权限
+     * @var array
+     */
+    private $defaultScope = [
+        'public',
+        'private',
+        'purchased',
+        'create',
+        'edit',
+        'delete',
+        'interact',
+        'upload',
+        'promo_codes',
+        'video_files',
+    ];
+
+    /**
+     * 初始化
+     */
+    public function init(): void
+    {
+    }
+
+    /**
+     * 初始化授权客户端
+     * @param AuthConfig $config
+     * @param AccessToken|null $token
+     */
+    protected function initAuthClient(AuthConfig $config, ?AccessToken $token = null): void
+    {
+        $this->lib = new \Vimeo\Vimeo($config->getClientId(), $config->getClientSecret());
+        if (!is_null($token)) {
+            $this->lib->setToken($token->getToken());
+        }
+        $config->setScope($config->getScope() ?: $this->defaultScope);
+    }
+
+    /**
+     * 生成授权链接
+     * @return string
+     */
+    public function generateAuthUrlByClient(): string
+    {
+        // 校验值
+        // $state = base64_encode(openssl_random_pseudo_bytes(30));
+        $state = uniqid();
+
+        // 生成授权链接
+        $authUrl = $this->lib->buildAuthorizationEndpoint($this->authConfig->getRedirectUrl(), $this->authConfig->getScope(), $state);
+
+        // 返回授权链接
+        return $authUrl;
+    }
+
+    /**
+     * 获取 AccessToken
+     * @param string $code
+     * @param string $state
+     * @return AccessToken
+     * @throws SocialSdkException
+     */
+    public function getAccessTokenInAuthorizationCodeModeByClient(string $code, string $state): AccessToken
+    {
+        // 获取 AccessToken
+        $response = $this->lib->accessToken($code, $this->authConfig->getRedirectUrl());
+
+        // 如果有错误就报错
+        if (isset($response['body']['error'])) {
+            throw new SocialSdkException($response['body']['error_description'] ?? $response['body']['error']);
+        }
+
+        // 日志记录
+        $this->writeLog("info", "code：{$code}\n响应结果：\n" . var_export($response, true));
+
+        // 如果有错误就报错
+        if (isset($response['body']['error'])) {
+            throw new SocialSdkException($response['body']['error_description'] ?? $response['body']['error']);
+        }
+
+        // 分析 user id
+        $userId = substr(strrchr($response['body']['user']['uri'], "/"), 1);
+
+        // 构造数据
+        $accessToken = new AccessToken();
+        $accessToken->setToken((string)($response['body']['access_token'] ?? ''));
+        $accessToken->setExpireTime(0); // access token 不过期
+        $accessToken->setRefreshToken(''); // access token 不过期
+        $accessToken->setScope(explode(' ', $response['body']['scope']));
+        $accessToken->setParams($response['body'] ?? []);
+        $accessToken->setUserId($userId);
+        $this->lib->setToken($accessToken->getToken());
+
+        return $accessToken;
+    }
+
+    /**
+     * AccessToken 是否已经过期
+     * @return bool
+     */
+    public function isAccessTokenExpired(): bool
+    {
+        return false;
+    }
+
+    /**
+     * 是否能够 RefreshToken
+     * @return bool
+     */
+    public function allowRefreshToken(): bool
+    {
+        return false;
+    }
+
+    /**
+     * 刷新 AccessToken
+     * @param string $refreshToken
+     * @return AccessToken
+     * @throws SocialSdkException
+     */
+    public function refreshAccessTokenByClient(string $refreshToken): AccessToken
+    {
+        throw new SocialSdkException("No need to refresh token for vimeo.");
+    }
+
+    /**
+     * 获取授权用户信息
+     * @return UserProfile
+     * @throws SocialSdkException
+     * @throws \Vimeo\Exceptions\VimeoRequestException
+     */
+    public function getUserProfile(): UserProfile
+    {
+        // 获取用户信息
+        $response = $this->lib->request('/me');
+
+        // 日志记录
+        $this->writeLog("info", "获取用户信息成功:\n" . var_export($response, true));
+
+        // 如果有错误就报错
+        if (isset($response['body']['error'])) {
+            throw new SocialSdkException($response['body']['error_description'] ?? $response['body']['error']);
+        }
+
+        // 用户id
+        $userId = substr(strrchr($response['body']['uri'], "/"), 1);
+
+        // 性别
+        // $sex = $response['body']['gender'] ?? '';
+        $sex = UserProfile::SEX_UNKNOWN;
+
+        // 构造数据
+        $userProfile = new UserProfile();
+        $userProfile->setId($userId);
+        $userProfile->setSex($sex);
+        $userProfile->setPictureUrl((string)($response['body']['pictures']['sizes'][0]['link'] ?? ''));
+        $userProfile->setFullName((string)($response['body']['name'] ?: ''));
+        $userProfile->setEmail('');
+        $userProfile->setBirthday(0);
+        $userProfile->setLink((string)($response['body']['link'] ?? ''));
+
+        return $userProfile;
+    }
+
+    /**
+     * 是否能够分享到用户
+     * @return bool
+     */
+    public function canShareToUser(): bool
+    {
+        return true;
+    }
+
+    /**
+     * 是否能够分享到频道
+     * @return bool
+     */
+    public function canShareToChannel(): bool
+    {
+        return false;
+    }
+
+    /**
+     * 获取要分享到的频道列表
+     * 这个“频道”在不同平台有不同的说法，如：channel, page, board, blog, folder 等等的说法。
+     * 如果某些平台无需分享到频道，返回空数组
+     * @return Channel[]
+     */
+    public function getShareChannelList(): array
+    {
+        return [];
+    }
+
+    /**
+     * 视频分享
+     * @param VideoShareParams $params
+     * @return VideoShareResult
+     * @throws SocialSdkException
+     * @throws \Vimeo\Exceptions\VimeoRequestException
+     */
+    public function shareVideo(VideoShareParams $params): VideoShareResult
+    {
+        // 发布视频
+        $response = $this->lib->request(
+            '/me/videos',
+            [
+                'upload' => [
+                    'approach' => 'pull',
+                    'link' => $params->getVideoUrl(),
+                ],
+                'name' => $params->getTitle(),
+                'description' => $params->getDescription(),
+            ],
+            'POST'
+        );
+
+        // 日志记录
+        $this->writeLog("info", "分享视频成功:\n" . var_export($response, true));
+
+        // 分析结果
+        $postUrl = $response['body']['link'] ?? '';
+        if (empty($response) || $response['status'] != 201 || empty($postUrl)) {
+            throw new SocialSdkException($response['body']['error'] ?? 'Viemo分享失败');
+        }
+
+        // 视频 id
+        $videoId = substr(strrchr($response['body']['uri'], "/"), 1);
+
+        // 构造数据
+        $result = new VideoShareResult();
+        $result->setId($videoId);
+        $result->setTitle((string)($response['body']['name'] ?? ''));
+        $result->setDescription((string)($response['body']['description'] ?? ''));
+        $result->setThumbnailUrl('');
+        $result->setUrl($postUrl);
+        $result->setCreatedTime(time());
+        return $result;
+    }
+
+}
