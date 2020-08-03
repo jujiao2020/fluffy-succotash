@@ -17,8 +17,6 @@ abstract class OAuth2 extends AbstractClient implements AuthorizationInterface, 
     const AUTH_MODE_AUTHORIZATION_CODE = 1;
     /** @var int 隐式模式 */
     const AUTH_MODE_IMPLICIT = 2;
-    /** @var int 密码模式 */
-    const AUTH_MODE_PASSWORD_CREDENTIALS = 3;
 
     /**
      * 授权方式
@@ -104,8 +102,6 @@ abstract class OAuth2 extends AbstractClient implements AuthorizationInterface, 
             return $this->getAccessTokenInAuthorizationCodeMode($requestParams);
         } elseif ($this->authMode == self::AUTH_MODE_IMPLICIT) {
             return $this->getAccessTokenInImplicitMode($requestParams);
-        } elseif ($this->authMode == self::AUTH_MODE_PASSWORD_CREDENTIALS) {
-            // TODO:
         }
         throw new SocialSdkException("获取授权码模式异常");
     }
@@ -188,11 +184,8 @@ abstract class OAuth2 extends AbstractClient implements AuthorizationInterface, 
         if (empty($state)) {
             throw new SocialSdkException("请求参数错误，缺少参数 state");
         }
-        if (empty($code)) {
-            throw new SocialSdkException("请求参数错误，缺少参数 code");
-        }
         // if (empty($userId)) {
-        //     throw new SocialSdkException("请求参数错误，缺少参数 code");
+        //     throw new SocialSdkException("请求参数错误，缺少参数 userId");
         // }
 
         // 校验 state 值是否真实

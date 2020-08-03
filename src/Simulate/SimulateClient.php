@@ -93,7 +93,7 @@ class SimulateClient implements SimulateInterface
         if ($hasError) {
             throw new SocialSdkException("调用模拟登录发布接口失败：$resBody");
         }
-        $msg = $res['msg'] ?? "调用模拟登录发布接口失败：" . $resData['error'];
+        $msg = $resData['msg'] ?? "调用模拟登录发布接口失败：" . $resData['error'];
 
         // 构造数据
         $result = new SimPostVideoResult();
@@ -192,12 +192,12 @@ class SimulateClient implements SimulateInterface
         $this->logger->writeLog($hasError ? 'error' : 'info', $logStr, 'sim-get-account-list');
 
         // 校验响应数据
-        if (!$hasError) {
+        if ($hasError) {
             throw new SocialSdkException('调用社媒分享官方账号接口发生异常：' . $resBody);
         }
 
         // 构造数据
-        $list = array($resData['list'] ?? []);
+        $list = $resData['list'] ?? [];
         $newList = [];
         foreach ($list as $account) {
             $obj = new SimulateAccount();

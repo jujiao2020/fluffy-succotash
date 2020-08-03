@@ -85,7 +85,7 @@ class ClientFactory
         if (!class_exists($fullClientName)) {
             throw new SocialSdkException("No match social media '{$socialMediaName}'");
         }
-        $client = new $fullClientName($this->cache, $this->logger);
+        $client = new $fullClientName($this->cache, $this->logger, $this->config['temp_storage_path'] ?? '');
         if (!$client instanceof AbstractClient) {
             throw new SocialSdkException("No match social media '{$socialMediaName}'");
         }

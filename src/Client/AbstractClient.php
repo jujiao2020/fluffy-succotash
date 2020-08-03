@@ -33,10 +33,11 @@ abstract class AbstractClient
      * @param LoggerInterface $logger
      * @param string $tempStoragePath
      */
-    public function __construct(CacheInterface $cache, LoggerInterface $logger)
+    public function __construct(CacheInterface $cache, LoggerInterface $logger, string $tempStoragePath = "/tmp")
     {
         $this->cache = $cache;
         $this->logger = $logger;
+        $this->tempStoragePath = preg_replace("@[\\/\\\\]*$@", "", $tempStoragePath);
         $this->init();
     }
 
@@ -118,7 +119,7 @@ abstract class AbstractClient
      */
     protected function downloadFile(string $videoUrl): string
     {
-        return FileUtil::downloadFile($videoUrl, dirname($this->tempStoragePath) . DIRECTORY_SEPARATOR . $this->getSocialMediaName());
+        return FileUtil::downloadFile($videoUrl, $this->tempStoragePath . DIRECTORY_SEPARATOR . $this->getSocialMediaName());
     }
 
 }
