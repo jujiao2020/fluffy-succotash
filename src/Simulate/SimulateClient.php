@@ -162,7 +162,7 @@ class SimulateClient implements SimulateInterface
 
     /**
      * 获取社媒发布官方账号列表
-     * @return array
+     * @return SimulateAccount[]
      * @throws SocialSdkException
      * @throws \GuzzleHttp\Exception\GuzzleException
      */

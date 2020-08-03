@@ -37,6 +37,7 @@ class ClientFactory
     /**
      * ClientFactory constructor.
      * @param array $config
+     * @throws SocialSdkException
      */
     public function __construct(array $config)
     {
@@ -48,12 +49,24 @@ class ClientFactory
         $this->config = $config;
 
         // 获取缓存处理
-        $cacheClass = $config['cache'] ?? Session::class;
-        $this->cache = new $cacheClass();
+        $cache = $config['cache'] ?? Session::class;
+        if (is_string($cache)) {
+            $cache = new $cache();
+        }
+        if (!$cache instanceof CacheInterface) {
+            throw new SocialSdkException("Cache must be the instance of CacheInterface");
+        }
+        $this->cache = $cache;
 
         // 获取日志处理
-        $loggerClass = $config['logger'] ?? NoLog::class;
-        $this->logger = new $loggerClass();
+        $logger = $config['logger'] ?? NoLog::class;
+        if (is_string($logger)) {
+            $logger = new $logger();
+        }
+        if (!$logger instanceof LoggerInterface) {
+            throw new SocialSdkException("Logger must be the instance of LoggerInterface");
+        }
+        $this->logger = $logger;
     }
 
     /**

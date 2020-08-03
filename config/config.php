@@ -14,10 +14,10 @@ return [
         'get_account_list_endpoint' => '',
     ],
 
-    // 缓存处理器
+    // 缓存处理器（类名或对象）
     'cache' => \Jcsp\SocialSdk\Cache\Session::class,
 
-    // 日志处理器
+    // 日志处理器（类名或对象）
     'logger' => \Jcsp\SocialSdk\Log\NoLog::class,
 
 ];

@@ -7,6 +7,7 @@ namespace Jcsp\SocialSdk\Contract;
 use Jcsp\SocialSdk\Model\SimPostVideoParams;
 use Jcsp\SocialSdk\Model\SimPostVideoResult;
 use Jcsp\SocialSdk\Model\SimPostVideoTask;
+use Jcsp\SocialSdk\Model\SimulateAccount;
 
 interface SimulateInterface
 {
@@ -27,7 +28,7 @@ interface SimulateInterface
 
     /**
      * 获取社媒发布官方账号列表
-     * @return array
+     * @return SimulateAccount[]
      */
     public function getAccountList(): array;
 
