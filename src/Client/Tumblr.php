@@ -299,7 +299,7 @@ class Tumblr extends OAuth1 implements ShareInterface
         $res = $this->lib->getBlogPosts($blogName, $params);
 
         // 写日志
-        $this->writeLog("info", "尝试抓取获取分享链接：blogName:{$blogName}\n：" . var_export($res, true));
+        $this->writeLog("info", "尝试抓取获取分享链接：blogName:{$blogName}\n：" . var_export($res, true), 'shareVideo');
 
         // 分析结果，找出匹配的 post 和 post url
         $posts = $res->posts ?? [];

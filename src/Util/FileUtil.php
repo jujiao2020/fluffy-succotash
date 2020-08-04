@@ -15,7 +15,7 @@ class FileUtil
     {
         // 处理目录
         if (!is_dir($dirPath)) {
-            mkdir($dirPath, 777, true);
+            mkdir($dirPath, 0777, true);
         }
 
         // 生成文件路径
