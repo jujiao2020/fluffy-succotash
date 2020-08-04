@@ -138,6 +138,7 @@ abstract class OAuth2 extends AbstractClient implements AuthorizationInterface, 
 
         // 调用客户端接口获取 Access Token
         $accessToken = $this->getAccessTokenInAuthorizationCodeModeByClient($code, $state);
+        $this->accessToken = $accessToken;
 
         // if (isset($response['body']['error'])) {
         //     throw new SocialSdkException($response['body']['error_description'] ?? $response['body']['error']);
@@ -242,5 +243,23 @@ abstract class OAuth2 extends AbstractClient implements AuthorizationInterface, 
      * @return AccessToken
      */
     abstract public function refreshAccessTokenByClient(string $refreshToken): AccessToken;
+
+    /**
+     * 写日志
+     * @param string $level
+     * @param string $content
+     * @param string $type
+     */
+    public function writeLog(string $level, string $content, string $type = ""): void
+    {
+        // $type 为空的话，使用调用者的函数名
+        if (empty($type)) {
+            $backtrace = debug_backtrace();
+            $type = $backtrace[1]['function'] ?? 'zzz';
+            // 特殊处理一些方法名
+            $type = preg_replace("@^((generateAuthUrl)|(getAccessToken)|(refreshAccessToken)).*$@", "$1", $type);
+        }
+        parent::writeLog($level, $content, $type);
+    }
 
 }

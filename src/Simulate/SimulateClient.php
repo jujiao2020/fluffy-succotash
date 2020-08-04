@@ -87,7 +87,7 @@ class SimulateClient implements SimulateInterface
 
         // 写日志
         $logStr = "请求url：{$endpoint}\n请求参数：\n" . var_export($params, true) . "\n响应状态码：{$res->getStatusCode()}，响应结果：\n{$resBody}";
-        $this->logger->writeLog(empty($apiResult['error']) ? 'info' : 'error', $logStr, 'sim-post-video');
+        $this->logger->writeLog(empty($apiResult['error']) ? 'info' : 'error', $logStr, 'simulate/sim_post_video');
 
         // 分析结果
         if ($hasError) {
@@ -141,7 +141,7 @@ class SimulateClient implements SimulateInterface
 
         // 写日志
         $logStr = "task_id: {$taskId}, \n请求url：{$endpoint}\n请求参数：\n" . var_export($params, true) . "\n响应状态码：{$res->getStatusCode()}，响应结果：\n{$resBody}";
-        $this->logger->writeLog($hasError ? 'error' : 'info', $logStr, 'sim-publish-task-query');
+        $this->logger->writeLog($hasError ? 'error' : 'info', $logStr, 'simulate/query_task_info');
 
         // 分析结果
         if ($hasError) {
@@ -189,7 +189,7 @@ class SimulateClient implements SimulateInterface
 
         // 写日志
         $logStr = "请求url：{$endpoint}\n响应状态码：{$res->getStatusCode()}，响应结果：\n{$resBody}";
-        $this->logger->writeLog($hasError ? 'error' : 'info', $logStr, 'sim-get-account-list');
+        $this->logger->writeLog($hasError ? 'error' : 'info', $logStr, 'simulate/get_account_list');
 
         // 校验响应数据
         if ($hasError) {
