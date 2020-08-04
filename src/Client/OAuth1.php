@@ -52,7 +52,7 @@ abstract class OAuth1 extends AbstractClient implements AuthorizationInterface, 
     {
         // 调用接口获取 OAuthToken 信息
         $oauthToken = $this->getOAuthToken();
-        $this->writeLog("info", "获取 OAuthToken ：" . json_encode($oauthToken, JSON_UNESCAPED_UNICODE));
+        $this->writeLog("info", "获取 OAuthToken ：" . var_export($oauthToken, true));
 
         // 校验
         if (empty($oauthToken->getOauthToken()) || empty($oauthToken->getOauthTokenSecret()) || !$oauthToken->getIsOauthCallbackConfirmed()) {
@@ -119,7 +119,7 @@ abstract class OAuth1 extends AbstractClient implements AuthorizationInterface, 
         $this->accessToken = $accessToken;
 
         // 写日志
-        $this->writeLog("info", "获取 AccessToken 成功：" . json_encode($accessToken, JSON_UNESCAPED_UNICODE));
+        $this->writeLog("info", "获取 AccessToken 成功：" . var_export($accessToken, true));
 
         // 删除缓存中 OauthToken 值
         $this->cache->delete($this->getOAuthTokenCacheKey());
