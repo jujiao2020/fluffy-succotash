@@ -95,12 +95,13 @@ class ClientFactory
 
     /**
      * 创建社媒模拟登录客户端
-     * @return SimulateInterface
+     * @return SimulateInterface|ClientProxy
      */
-    public function createSimulateClient(): SimulateInterface
+    public function createSimulateClient(): ClientProxy
     {
         $config = $this->config['simulate'] ?? [];
-        return new SimulateClient($this->logger, $config);
+        $client = new SimulateClient($this->logger, $config);
+        return new ClientProxy($client);
     }
 
 }

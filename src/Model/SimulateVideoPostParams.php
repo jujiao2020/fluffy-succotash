@@ -3,34 +3,45 @@
 namespace Jcsp\SocialSdk\Model;
 
 
-class SimPostVideoParams
+/**
+ * 模拟登录视频发布参数
+ * Class SimulatePostVideoParams
+ * @package Jcsp\SocialSdk\Model
+ */
+class SimulateVideoPostParams
 {
     /**
+     * 社媒英文名称
      * @var string
      */
     private $socialMediaName = '';
 
     /**
+     * 视频url
      * @var string
      */
     private $videoUrl = '';
 
     /**
+     * 视频标题
      * @var string
      */
     private $title = '';
 
     /**
+     * 视频描述
      * @var string
      */
     private $description = '';
 
     /**
+     * 回调url
      * @var string
      */
     private $callbackUrl = '';
 
     /**
+     * 发布账号
      * @var string
      */
     private $account = '';

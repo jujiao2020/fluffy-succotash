@@ -3,17 +3,12 @@
 namespace Jcsp\SocialSdk\Client;
 
 
-use Jcsp\SocialSdk\Contract\AuthorizationInterface;
-use Jcsp\SocialSdk\Contract\ShareInterface;
-use Jcsp\SocialSdk\Contract\UserInterface;
-
 class ClientProxy
 {
 
-    /** @var AbstractClient|AuthorizationInterface|UserInterface|ShareInterface */
     private $client;
 
-    public function __construct(AbstractClient $client)
+    public function __construct($client)
     {
         $this->client = $client;
     }
@@ -41,7 +36,9 @@ class ClientProxy
             return $method->invoke($this->client, ...$arguments);
         } catch (\Exception $ex) {
             $errMsg = "发生异常: {$ex->getMessage()}\n" . var_export($ex->getTraceAsString(), true);
-            $this->client->writeLog("error", $errMsg, $name);
+            if ($ref->hasMethod('writeLog')) {
+                $ref->getMethod('writeLog')->invoke($this->client, "error", $errMsg, $name);
+            }
             throw $ex;
         }
     }

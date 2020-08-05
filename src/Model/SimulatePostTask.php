@@ -2,14 +2,24 @@
 
 namespace Jcsp\SocialSdk\Model;
 
-
-class SimPostVideoTask
+/**
+ * 模拟登录发布任务信息
+ * Class SimulatePostTask
+ * @package Jcsp\SocialSdk\Model
+ */
+class SimulatePostTask
 {
-    // 发布状态常量
+    // 任务发布状态常量
+    /** @var int 未知 */
     const TASK_STATUS_UNKNOWN = 0;
+    /** @var int 发布成功 */
     const TASK_STATUS_SUCCESS = 1;
+    /** @var int 第三方平台审核中 */
     const TASK_STATUS_PLATFORM_REVIEWING = 2;
+    /** @var int 发布失败 */
     const TASK_STATUS_FAIL = 3;
+    /** @var int 发布成功，但任务是以前曾经成功发布过 */
+    const TASK_STATUS_ALREADY_POST = 4;
 
     /**
      * 任务id
@@ -18,49 +28,31 @@ class SimPostVideoTask
     private $taskId = '';
 
     /**
-     * 状态
+     * 任务发布状态
      * @var int
      */
-    private $status = 0;
+    private $taskStatus = self::TASK_STATUS_UNKNOWN;
 
     /**
-     * 提示信息
+     * 任务提示信息（给开发人员看）
      * @var string
      */
     private $msg = '';
 
     /**
-     * 提示信息（给运营人员或客户看的）
+     * 任务提示信息（给运营人员或客户看的）
      * @var string
      */
     private $info = '';
 
     /**
-     * 状态
+     * 分享链接（发布成功才有）
      * @var string
      */
-    private $url = '';
+    private $postUrl = '';
 
     /**
-     * 发布的标题
-     * @var string
-     */
-    private $title = '';
-
-    /**
-     * 发布的描述
-     * @var string
-     */
-    private $description;
-
-    /**
-     * 发布到的账号
-     * @var string
-     */
-    private $account = '';
-
-    /**
-     * 回调地址
+     * 任务回调url
      * @var string
      */
     private $callbackUrl = '';
@@ -84,17 +76,17 @@ class SimPostVideoTask
     /**
      * @return int
      */
-    public function getStatus(): int
+    public function getTaskStatus(): int
     {
-        return $this->status;
+        return $this->taskStatus;
     }
 
     /**
-     * @param int $status
+     * @param int $taskStatus
      */
-    public function setStatus(int $status): void
+    public function setTaskStatus(int $taskStatus): void
     {
-        $this->status = $status;
+        $this->taskStatus = $taskStatus;
     }
 
     /**
@@ -132,65 +124,17 @@ class SimPostVideoTask
     /**
      * @return string
      */
-    public function getUrl(): string
+    public function getPostUrl(): string
     {
-        return $this->url;
+        return $this->postUrl;
     }
 
     /**
-     * @param string $url
+     * @param string $postUrl
      */
-    public function setUrl(string $url): void
+    public function setPostUrl(string $postUrl): void
     {
-        $this->url = $url;
-    }
-
-    /**
-     * @return string
-     */
-    public function getTitle(): string
-    {
-        return $this->title;
-    }
-
-    /**
-     * @param string $title
-     */
-    public function setTitle(string $title): void
-    {
-        $this->title = $title;
-    }
-
-    /**
-     * @return string
-     */
-    public function getDescription(): string
-    {
-        return $this->description;
-    }
-
-    /**
-     * @param string $description
-     */
-    public function setDescription(string $description): void
-    {
-        $this->description = $description;
-    }
-
-    /**
-     * @return string
-     */
-    public function getAccount(): string
-    {
-        return $this->account;
-    }
-
-    /**
-     * @param string $account
-     */
-    public function setAccount(string $account): void
-    {
-        $this->account = $account;
+        $this->postUrl = $postUrl;
     }
 
     /**

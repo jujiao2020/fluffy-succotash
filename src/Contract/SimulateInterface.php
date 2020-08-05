@@ -4,27 +4,34 @@
 namespace Jcsp\SocialSdk\Contract;
 
 
-use Jcsp\SocialSdk\Model\SimPostVideoParams;
-use Jcsp\SocialSdk\Model\SimPostVideoResult;
-use Jcsp\SocialSdk\Model\SimPostVideoTask;
+use Jcsp\SocialSdk\Model\SimulateVideoPostParams;
 use Jcsp\SocialSdk\Model\SimulateAccount;
+use Jcsp\SocialSdk\Model\SimulatePostTask;
+use Jcsp\SocialSdk\Model\SimulateVideoPostTask;
 
 interface SimulateInterface
 {
 
     /**
      * 模拟登录发布视频
-     * @param SimPostVideoParams $params
-     * @return SimPostVideoResult
+     * @param SimulateVideoPostParams $params
+     * @return SimulatePostTask
      */
-    public function simPostVideo(SimPostVideoParams $params): SimPostVideoResult;
+    public function simPostVideo(SimulateVideoPostParams $params): SimulatePostTask;
+
+    /**
+     * 处理模拟登录发布回调处理
+     * @param array $requestParams
+     * @return SimulatePostTask
+     */
+    public function handleSimPostCallback(array $requestParams): SimulatePostTask;
 
     /**
      * 查询模拟登录视频发布的任务状态
      * @param string $taskId
-     * @return SimPostVideoTask
+     * @return SimulateVideoPostTask
      */
-    public function queryTaskInfo(string $taskId): SimPostVideoTask;
+    public function queryTaskInfo(string $taskId): SimulateVideoPostTask;
 
     /**
      * 获取社媒发布官方账号列表
