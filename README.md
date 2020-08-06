@@ -226,7 +226,7 @@ It's hard to guarantee the callback handler always runs stably, so here provide 
 $result = $client->queryTaskInfo("Task Id");
 ```
 
-### Task Status
+#### Task Status
 
 See the class `\Jcsp\SocialSdk\ModelSimulatePostTask`
 
