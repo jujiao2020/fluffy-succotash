@@ -1,7 +1,7 @@
 {
   "name": "jcsp/social-sdk",
   "type": "library",
-  "version": "v0.0.1",
+  "version": "v1.0.0",
   "keywords": [
     "php",
     "sdk"
@@ -9,7 +9,7 @@
   "description": "social api sdk",
   "license": "Apache-2.0",
   "require": {
-    "php": ">7.2",
+    "php": ">=7.2",
     "ext-json": "*",
     "ext-fileinfo": "*",
     "abraham/twitteroauth": "^1.0",
