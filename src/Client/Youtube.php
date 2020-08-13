@@ -216,6 +216,11 @@ class Youtube extends OAuth2 implements ShareInterface
      */
     public function shareVideo(VideoShareParams $params): VideoShareResult
     {
+        // https://github.com/googleapis/google-api-php-client/blob/master/examples/large-file-upload.php
+
+        // 下载视频到本地
+        $localFilePath = $this->downloadFile($params->getVideoUrl());
+
         $youtube = new \Google_Service_YouTube($this->lib);
         $snippet = new \Google_Service_YouTube_VideoSnippet();
         $snippet->setTitle($params->getTitle());
@@ -258,30 +263,20 @@ class Youtube extends OAuth2 implements ShareInterface
             true,
             $chunkSizeBytes
         );
-
-        // 禅道3748,设置120秒超时，重试3次
-        $opts = array(
-            'http' =>
-                array(
-                    'timeout' => 300,//单位秒
-                )
-        );
-        $context = stream_context_create($opts);
-        $cnt = 0;
-        $file = '';
-        while ($cnt < 3 && ($file = file_get_contents($params->getVideoUrl(), false, $context)) === false) {
-            $cnt++;
-        }
-
-        $media->setFileSize(strlen($file));
+        $media->setFileSize(filesize($localFilePath));
 
         // Read the media file and upload it chunk by chunk.
-        $status = $media->nextChunk($file);
-        if (empty($status)) {
-            $status = $media->nextChunk($file);
+        $status = false;
+        $handle = fopen($localFilePath, "rb");
+        while (!$status && !feof($handle)) {
+            // $chunk = fread($handle, $chunkSizeBytes);
+            $chunk = $this->readVideoChunk($handle, $chunkSizeBytes);
+            $status = $media->nextChunk($chunk);
         }
+        fclose($handle);
+
         // If you want to make other calls after the file upload, set setDefer back to false
-        $this->lib->setDefer(false);
+        // $this->lib->setDefer(false);
 
         // // 处理缩略图
         // if (!empty($params->getThumbnailUrl())) {
@@ -312,6 +307,28 @@ class Youtube extends OAuth2 implements ShareInterface
         $result->setUrl($url);
         $result->setCreatedTime(time());
         return $result;
+    }
+
+    /**
+     * 分块读取视频文件内容
+     * @param $handle
+     * @param int $chunkSize
+     * @return string
+     */
+    private function readVideoChunk($handle, int $chunkSize): string
+    {
+        $byteCount = 0;
+        $giantChunk = "";
+        while (!feof($handle)) {
+            // fread will never return more than 8192 bytes if the stream is read buffered and it does not represent a plain file
+            $chunk = fread($handle, 8192);
+            $byteCount += strlen($chunk);
+            $giantChunk .= $chunk;
+            if ($byteCount >= $chunkSize) {
+                return $giantChunk;
+            }
+        }
+        return $giantChunk;
     }
 
 }
