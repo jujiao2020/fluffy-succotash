@@ -115,7 +115,7 @@ abstract class OAuth1 extends AbstractClient implements AuthorizationInterface, 
         }
 
         // 调用接口获取 AccessToken
-        $accessToken = $this->getAccessTokenByClient($oauthTokenInfoInCache->getOauthToken(), $oauthVerifier);
+        $accessToken = $this->getAccessTokenByClient($oauthTokenInfoInCache, $oauthVerifier);
         $this->accessToken = $accessToken;
 
         // 写日志
@@ -129,11 +129,11 @@ abstract class OAuth1 extends AbstractClient implements AuthorizationInterface, 
 
     /**
      * 获取 AccessToken
-     * @param string $oauthToken
+     * @param OAuthToken $oauthToken
      * @param string $oauthVerifier
      * @return AccessToken
      */
-    abstract public function getAccessTokenByClient(string $oauthToken, string $oauthVerifier): AccessToken;
+    abstract public function getAccessTokenByClient(OAuthToken $oauthToken, string $oauthVerifier): AccessToken;
 
     /**
      * 获取 OAuthToken 缓存 key

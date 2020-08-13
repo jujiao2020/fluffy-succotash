@@ -73,7 +73,7 @@ class Twitter extends OAuth1 implements ShareInterface
         $oauthToken = new OAuthToken();
         $oauthToken->setOauthToken($result['oauth_token'] ?? '');
         $oauthToken->setOauthTokenSecret($result['oauth_token_secret'] ?? '');
-        $oauthToken->setOauthCallbackConfirmed($result['oauth_token'] === 'true');
+        $oauthToken->setOauthCallbackConfirmed($result['oauth_callback_confirmed'] === 'true');
         return $oauthToken;
     }
 
@@ -89,17 +89,18 @@ class Twitter extends OAuth1 implements ShareInterface
 
     /**
      * 获取 AccessToken
-     * @param string $oauthToken
+     * @param OAuthToken $oauthToken
      * @param string $oauthVerifier
      * @return AccessToken
      * @throws \Abraham\TwitterOAuth\TwitterOAuthException
      */
-    public function getAccessTokenByClient(string $oauthToken, string $oauthVerifier): AccessToken
+    public function getAccessTokenByClient(OAuthToken $oauthToken, string $oauthVerifier): AccessToken
     {
         // 参考文档：
         // https://twitteroauth.com/callback.php?oauth_token=rsKhGgAAAAAAAAAbAAABcqLgWlU&oauth_verifier=XOOExgUof0uWJ0hbnoyI3TK0FfdUaB5j
 
         // 获取 access token
+        $this->lib->setOauthToken($oauthToken->getOauthToken(), $oauthToken->getOauthTokenSecret());
         $result = $this->lib->oauth('oauth/access_token', array('oauth_verifier' => $oauthVerifier));
 
         // $result：

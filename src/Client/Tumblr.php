@@ -65,7 +65,7 @@ class Tumblr extends OAuth1 implements ShareInterface
         $oauthToken = new OAuthToken();
         $oauthToken->setOauthToken($data['oauth_token'] ?? '');
         $oauthToken->setOauthTokenSecret($data['oauth_token_secret'] ?? '');
-        $oauthToken->setOauthCallbackConfirmed($data['oauth_token'] === 'true');
+        $oauthToken->setOauthCallbackConfirmed($data['oauth_callback_confirmed'] === 'true');
         return $oauthToken;
     }
 
@@ -81,14 +81,14 @@ class Tumblr extends OAuth1 implements ShareInterface
 
     /**
      * 获取 AccessToken
-     * @param string $oauthToken
+     * @param OAuthToken $oauthToken
      * @param string $oauthVerifier
      * @return AccessToken
      */
-    public function getAccessTokenByClient(string $oauthToken, string $oauthVerifier): AccessToken
+    public function getAccessTokenByClient(OAuthToken $oauthToken, string $oauthVerifier): AccessToken
     {
         // 获取 Access Token
-        $this->lib->setToken($oauthToken, $oauthVerifier);
+        $this->lib->setToken($oauthToken->getOauthToken(), $oauthToken->getOauthTokenSecret());
         $requestHandler = $this->lib->getRequestHandler();
         $requestHandler->setBaseUrl(self::BASE_URL);
         $resp = $requestHandler->request('POST', 'oauth/access_token', ['oauth_verifier' => $oauthVerifier]);
@@ -97,7 +97,7 @@ class Tumblr extends OAuth1 implements ShareInterface
         parse_str($result, $data);
 
         // 写日志
-        $this->writeLog("info", "oauth/request_token：结果：{$result}");
+        $this->writeLog("info", "oauth/request_token：结果：" . var_export($resp, true));
 
         // 构造数据
         $accessToken = new AccessToken();
