@@ -266,37 +266,29 @@ class Facebook extends OAuth2 implements ShareInterface
      */
     public function shareVideo(VideoShareParams $params): VideoShareResult
     {
+        // https://github.com/facebookarchive/php-graph-sdk/blob/master/docs/reference/Facebook.md#uploadvideo
+
         // 下载视频到本地
         $localFilePath = $this->downloadFile($params->getVideoUrl());
 
-        // 上传视频
-        $fbVideo = $this->lib->videoToUpload($localFilePath);
-
-        // 写日志
-        $this->writeLog("info", "facebook/share_video", "上传视频成功:\n" . var_export($fbVideo, true));
-
-        // 发布到主页
+        // 发布视频到主页
         $data = [];
+        $data['title'] = $params->getTitle();
         $data['description'] = $params->getDescription();
         $data['published'] = 'true';
-        $data['videos'] = $fbVideo;
-        // 这里的token是 page access token
-        $response = $this->lib->post('/' . $params->getSocialId() . '/' . 'videos', $data, $params->getAccessToken());
-        $graphNode = $response->getDecodedBody();
+        $targetPath = "/{$params->getSocialId()}/videos";
+        $response = $this->lib->uploadVideo($targetPath, $localFilePath, $data, $params->getAccessToken());
 
         // 写日志
-        $this->writeLog("info", "发布到主页成功:\n" . var_export($graphNode, true));
-
-        // 删除临时文件
-        unlink($localFilePath);
+        $this->writeLog("info", "发布到主页成功:\n" . var_export($response, true));
 
         // 有错误抛出
-        if (isset($graphNode['error'])) {
-            throw new SocialSdkException($graphNode['error']);
+        if (isset($response['error'])) {
+            throw new SocialSdkException($response['error']);
         }
 
         // 分享链接
-        $postId = (string)($graphNode['id_str'] ?? $graphNode['id'] ?? '');
+        $postId = (string)($response['video_id'] ?? $response['id_str'] ?? $response['id'] ?? '');
         if (empty($postId)) {
             throw new SocialSdkException("No found post id");
         }
