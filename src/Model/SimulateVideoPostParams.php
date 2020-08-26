@@ -10,6 +10,12 @@ namespace Jcsp\SocialSdk\Model;
  */
 class SimulateVideoPostParams
 {
+    // 账号类型
+    /** @var int 官方账号 */
+    const ACCOUNT_TYPE_OFFICIAL = 0;
+    /** @var int 个人账号 */
+    const ACCOUNT_TYPE_USER = 1;
+
     /**
      * 社媒英文名称
      * @var string
@@ -45,6 +51,12 @@ class SimulateVideoPostParams
      * @var string
      */
     private $account = '';
+
+    /**
+     * 账号类型（0：官方账号，1：个人账号）
+     * @var int
+     */
+    private $account_type = 0;
 
     /**
      * @return string
@@ -140,6 +152,22 @@ class SimulateVideoPostParams
     public function setAccount(string $account): void
     {
         $this->account = $account;
+    }
+
+    /**
+     * @return int
+     */
+    public function getAccountType(): int
+    {
+        return $this->account_type;
+    }
+
+    /**
+     * @param int $account_type
+     */
+    public function setAccountType(int $account_type): void
+    {
+        $this->account_type = $account_type;
     }
 
 }

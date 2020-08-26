@@ -6,7 +6,12 @@ namespace Jcsp\SocialSdk\Simulate;
 use Jcsp\SocialSdk\Contract\LoggerInterface;
 use Jcsp\SocialSdk\Contract\SimulateInterface;
 use Jcsp\SocialSdk\Exception\SocialSdkException;
+use Jcsp\SocialSdk\Model\CommonResult;
 use Jcsp\SocialSdk\Model\SimulatePostTask;
+use Jcsp\SocialSdk\Model\SimulateAccountBindVerificationParams;
+use Jcsp\SocialSdk\Model\SimulateAccountBindParams;
+use Jcsp\SocialSdk\Model\SimulateAccountUnbindParams;
+use Jcsp\SocialSdk\Model\SimulateAccountBindInfo;
 use Jcsp\SocialSdk\Model\SimulateVideoPostParams;
 use Jcsp\SocialSdk\Model\SimulateAccount;
 use Jcsp\SocialSdk\Model\SimulateVideoPostTask;
@@ -63,6 +68,7 @@ class SimulateClient implements SimulateInterface
             'callback' => $params->getCallbackUrl(),
             'media' => strtolower($params->getSocialMediaName()),
             'user' => $params->getAccount(),
+            'account_type' => $params->getAccount(),
         ];
 
         // 请求链接
@@ -91,7 +97,7 @@ class SimulateClient implements SimulateInterface
 
         // 写日志
         $logStr = "请求url：{$endpoint}\n请求参数：\n" . var_export($requestParams, true) . "\n响应状态码：{$res->getStatusCode()}，响应结果：\n{$resBody}";
-        $this->writeLog(empty($apiResult['error']) ? 'info' : 'error', $logStr, 'sim_post_video');
+        $this->writeLog($hasError ? 'error' : 'info', $logStr);
 
         // 分析结果
         if ($hasError) {
@@ -123,7 +129,7 @@ class SimulateClient implements SimulateInterface
         // 写日志
         $requestUri = $_SERVER['REQUEST_URI'] ?? '';
         $logStr = "访问路径: {$requestUri}， 请求参数：\n" . var_export($requestParams, true);
-        $this->writeLog($taskStatus == SimulatePostTask::TASK_STATUS_SUCCESS ? 'info' : 'warn', $logStr, 'handle_sim_post_callback');
+        $this->writeLog($taskStatus == SimulatePostTask::TASK_STATUS_SUCCESS ? 'info' : 'warn', $logStr);
 
         // 构造数据
         $task = new SimulatePostTask();
@@ -172,7 +178,7 @@ class SimulateClient implements SimulateInterface
 
         // 写日志
         $logStr = "task_id: {$taskId}, \n请求url：{$endpoint}\n请求参数：\n" . var_export($params, true) . "\n响应状态码：{$res->getStatusCode()}，响应结果：\n{$resBody}";
-        $this->writeLog($hasError ? 'error' : 'info', $logStr, 'query_task_info');
+        $this->writeLog($hasError ? 'error' : 'info', $logStr);
 
         // 分析结果
         if ($hasError) {
@@ -229,7 +235,7 @@ class SimulateClient implements SimulateInterface
 
         // 写日志
         $logStr = "请求url：{$endpoint}\n响应状态码：{$res->getStatusCode()}，响应结果：\n{$resBody}";
-        $this->writeLog($hasError ? 'error' : 'info', $logStr, 'get_account_list');
+        $this->writeLog($hasError ? 'error' : 'info', $logStr);
 
         // 校验响应数据
         if ($hasError) {
@@ -291,13 +297,258 @@ class SimulateClient implements SimulateInterface
     }
 
     /**
+     * 绑定账号
+     * @param SimulateAccountBindParams $params
+     * @return CommonResult
+     * @throws SocialSdkException
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public function bindAccount(SimulateAccountBindParams $params): CommonResult
+    {
+        // 校验
+        if (strlen($params->getSocialMediaName()) == 0) {
+            throw new SocialSdkException("社媒名称不能为空");
+        }
+        if (strlen($params->getUserId()) == 0) {
+            throw new SocialSdkException("用户id不能为空");
+        }
+        if (strlen($params->getAccount()) == 0) {
+            throw new SocialSdkException("用户账号不能为空");
+        }
+        if (strlen($params->getPwd()) == 0) {
+            throw new SocialSdkException("用户密码不能为空");
+        }
+        if (strlen($params->getCallbackUrl()) == 0) {
+            throw new SocialSdkException("缺少回调路径");
+        }
+
+        // 构造参数
+        $requestParams = [
+            'user_id' => $params->getUserId(),
+            'user' => $params->getAccount(),
+            'pwd' => $params->getPwd(),
+            'media' => strtolower($params->getSocialMediaName()),
+            'callback' => $params->getCallbackUrl(),
+        ];
+        if (strlen($params->getPhone()) > 0) {
+            $requestParams['phone'] = $params->getPhone();
+        }
+
+        // 请求链接
+        $endpoint = $this->config['bind_account_endpoint'] ?? '';
+        if (empty($endpoint)) {
+            throw new SocialSdkException('账号绑定链接不能为空');
+        }
+
+        // 发起请求
+        $client = new \GuzzleHttp\Client();
+        $res = $client->request('POST', $endpoint, [
+            'form_params' => $requestParams,
+            'timeout' => 30,
+        ]);
+
+        // 处理响应，响应格式：
+        // {"status": 200, "msg": "成功加入授权账号队列"}
+        $resBody = "";
+        try {
+            $resBody = $res->getBody()->getContents();
+        } catch (\Exception $ex) {
+        }
+        $resData = json_decode($resBody, true);
+        $hasError = $res->getStatusCode() != 200 || empty($resData) || !is_array($resData) || $resData['status'] >= 400;
+
+        // 写日志
+        $requestParams['pwd'] = '******';
+        $logStr = "请求url：{$endpoint}\n请求参数：\n" . var_export($requestParams, true) . "\n响应状态码：{$res->getStatusCode()}，响应结果：\n{$resBody}";
+        $this->writeLog($hasError ? 'error' : 'info', $logStr);
+
+        // 分析结果
+        if ($hasError) {
+            throw new SocialSdkException("调用账号绑定接口失败：$resBody");
+        }
+
+        // 返回结果
+        $result = new CommonResult();
+        $result->setStatus(200);
+        $result->setMsg((string)($resData['msg'] ?? ''));
+        return $result;
+    }
+
+    /**
+     * 账号绑定回调处理
+     * @param array $requestParams
+     * @return SimulateAccountBindInfo
+     */
+    public function handleBindProcessCallback(array $requestParams): SimulateAccountBindInfo
+    {
+        // 写日志
+        $requestUri = $_SERVER['REQUEST_URI'] ?? '';
+        $logStr = "访问路径: {$requestUri}， 请求参数：\n" . var_export($requestParams, true);
+        $this->writeLog('info', $logStr);
+
+        // 构造数据
+        $obj = new SimulateAccountBindInfo();
+        $obj->setUserId((string)($requestParams['user_id'] ?? ''));
+        $obj->setAccount((string)($requestParams['account'] ?? ''));
+        $obj->setSocialId((string)($requestParams['social_id'] ?? ''));
+        $obj->setMsg((string)($requestParams['msg'] ?? ''));
+        $obj->setStatus((int)($requestParams['status'] ?? ''));
+        $obj->setVerifyType((int)($requestParams['verify_type'] ?? ''));
+        $obj->setVerifyTips((string)($requestParams['verify_tips'] ?? ''));
+        $obj->setDisplayName((string)($requestParams['display_name'] ?? ''));
+        $obj->setHeadImgUrl((string)($requestParams['head_img_url'] ?? ''));
+        $obj->setPageUrl((string)($requestParams['page_url'] ?? ''));
+        return $obj;
+    }
+
+    /**
+     * 提交验证信息，某些社媒账号绑定需要
+     * @param SimulateAccountBindVerificationParams $params
+     * @return CommonResult
+     * @throws SocialSdkException
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public function submitVerificationForAccountBinding(SimulateAccountBindVerificationParams $params): CommonResult
+    {
+        // 校验
+        if (strlen($params->getSocialMediaName()) == 0) {
+            throw new SocialSdkException("社媒名称不能为空");
+        }
+        if (strlen($params->getUserId()) == 0) {
+            throw new SocialSdkException("用户id不能为空");
+        }
+        if (strlen($params->getAccount()) == 0) {
+            throw new SocialSdkException("用户账号不能为空");
+        }
+        if (strlen($params->getVerificationString()) == 0) {
+            throw new SocialSdkException("校验信息不能为空");
+        }
+
+        // 构造参数
+        $requestParams = [
+            'verify' => $params->getVerificationString(),
+            'user_id' => $params->getUserId(),
+            'user' => $params->getAccount(),
+            'media' => strtolower($params->getSocialMediaName()),
+        ];
+
+        // 请求链接
+        $endpoint = $this->config['bind_account_submit_verify_endpoint'] ?? '';
+        if (empty($endpoint)) {
+            throw new SocialSdkException('用户账号绑定提交验证信息接口链接不能为空');
+        }
+
+        // 发起请求
+        $client = new \GuzzleHttp\Client();
+        $res = $client->request('POST', $endpoint, [
+            'form_params' => $requestParams,
+            'timeout' => 30,
+        ]);
+
+        // 处理响应，响应格式：
+        // {'status': 200, 'msg': '开始验证'}
+        $resBody = "";
+        try {
+            $resBody = $res->getBody()->getContents();
+        } catch (\Exception $ex) {
+        }
+        $resData = json_decode($resBody, true);
+        $hasError = $res->getStatusCode() != 200 || empty($resData) || !is_array($resData) || $resData['status'] != 200;
+
+        // 写日志
+        $logStr = "请求url：{$endpoint}\n请求参数：\n" . var_export($requestParams, true) . "\n响应状态码：{$res->getStatusCode()}，响应结果：\n{$resBody}";
+        $this->writeLog($hasError ? 'error' : 'info', $logStr);
+
+        // 分析结果
+        if ($hasError) {
+            throw new SocialSdkException("调用用户账号绑定提交验证信息接口失败：$resBody");
+        }
+
+        // 返回结果
+        $result = new CommonResult();
+        $result->setStatus((int)($resData['status'] ?? 0));
+        $result->setMsg((string)($resData['msg'] ?? ''));
+        return $result;
+    }
+
+    /**
+     * 解绑账号
+     * @param SimulateAccountUnbindParams $params
+     * @return CommonResult
+     * @throws SocialSdkException
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public function unbindAccount(SimulateAccountUnbindParams $params): CommonResult
+    {
+        // 校验
+        if (strlen($params->getUserId()) == 0) {
+            throw new SocialSdkException("用户id不能为空");
+        }
+        if (strlen($params->getSocialMediaName()) == 0) {
+            throw new SocialSdkException("社媒名称不能为空");
+        }
+        if (strlen($params->getAccount()) == 0) {
+            throw new SocialSdkException("用户账号不能为空");
+        }
+
+        // 构造参数
+        $requestParams = [
+            'user_id' => $params->getUserId(),
+            'user' => $params->getAccount(),
+            'media' => strtolower($params->getSocialMediaName()),
+        ];
+
+        // 请求链接
+        $endpoint = $this->config['unbind_account_endpoint'] ?? '';
+        if (empty($endpoint)) {
+            throw new SocialSdkException('账号解绑链接不能为空');
+        }
+
+        // 发起请求
+        $client = new \GuzzleHttp\Client();
+        $res = $client->request('POST', $endpoint, [
+            'form_params' => $requestParams,
+            'timeout' => 30,
+        ]);
+
+        // 处理响应，响应格式：
+        // {'status': 200, 'msg': ''}
+        $resBody = "";
+        try {
+            $resBody = $res->getBody()->getContents();
+        } catch (\Exception $ex) {
+        }
+        $resData = json_decode($resBody, true);
+        $hasError = $res->getStatusCode() != 200 || empty($resData) || !is_array($resData) || $resData['status'] != 200;
+
+        // 写日志
+        $logStr = "请求url：{$endpoint}\n请求参数：\n" . var_export($requestParams, true) . "\n响应状态码：{$res->getStatusCode()}，响应结果：\n{$resBody}";
+        $this->writeLog($hasError ? 'error' : 'info', $logStr);
+
+        // 分析结果
+        if ($hasError) {
+            throw new SocialSdkException("调用用户账号解绑接口失败：$resBody");
+        }
+
+        // 返回结果
+        $result = new CommonResult();
+        $result->setStatus((int)($resData['status'] ?? 0));
+        $result->setMsg((string)($resData['msg'] ?? ''));
+        return $result;
+    }
+
+    /**
      * 写日志
      * @param string $level
      * @param string $content
      * @param string $type
      */
-    public function writeLog(string $level, string $content, string $type): void
+    public function writeLog(string $level, string $content, string $type = ''): void
     {
+        if (empty($type)) {
+            $backtrace = debug_backtrace();
+            $type = $backtrace[1]['function'] ?? 'zzz';
+        }
         $this->logger->writeLog($level, $content, "simulate/{$type}");
     }
 

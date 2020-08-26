@@ -12,6 +12,12 @@ return [
         'query_post_task_endpoint' => '',
         // 账号列表获取接口
         'get_account_list_endpoint' => '',
+        // 用户账号绑定接口
+        'bind_account_endpoint' => '',
+        // 用户账号绑定提交验证信息接口
+        'bind_account_submit_verification_endpoint' => '',
+        // 用户账号解绑接口
+        'unbind_account_endpoint' => '',
     ],
 
     // 缓存处理器（类名或对象）

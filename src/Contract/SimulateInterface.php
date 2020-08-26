@@ -4,6 +4,11 @@
 namespace Jcsp\SocialSdk\Contract;
 
 
+use Jcsp\SocialSdk\Model\CommonResult;
+use Jcsp\SocialSdk\Model\SimulateAccountBindVerificationParams;
+use Jcsp\SocialSdk\Model\SimulateAccountBindParams;
+use Jcsp\SocialSdk\Model\SimulateAccountBindInfo;
+use Jcsp\SocialSdk\Model\SimulateAccountUnbindParams;
 use Jcsp\SocialSdk\Model\SimulateVideoPostParams;
 use Jcsp\SocialSdk\Model\SimulateAccount;
 use Jcsp\SocialSdk\Model\SimulatePostTask;
@@ -38,5 +43,33 @@ interface SimulateInterface
      * @return SimulateAccount[]
      */
     public function getAccountList(): array;
+
+    /**
+     * 绑定账号
+     * @param SimulateAccountBindParams $params
+     * @return CommonResult
+     */
+    public function bindAccount(SimulateAccountBindParams $params): CommonResult;
+
+    /**
+     * 账号绑定回调处理
+     * @param array $requestParams
+     * @return SimulateAccountBindInfo
+     */
+    public function handleBindProcessCallback(array $requestParams): SimulateAccountBindInfo;
+
+    /**
+     * 提交验证信息，某些社媒账号绑定需要
+     * @param SimulateAccountBindVerificationParams $params
+     * @return CommonResult
+     */
+    public function submitVerificationForAccountBinding(SimulateAccountBindVerificationParams $params): CommonResult;
+
+    /**
+     * 解绑账号
+     * @param SimulateAccountUnbindParams $params
+     * @return CommonResult
+     */
+    public function unbindAccount(SimulateAccountUnbindParams $params): CommonResult;
 
 }
