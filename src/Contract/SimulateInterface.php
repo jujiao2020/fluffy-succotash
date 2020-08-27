@@ -9,6 +9,7 @@ use Jcsp\SocialSdk\Model\SimulateAccountBindVerificationParams;
 use Jcsp\SocialSdk\Model\SimulateAccountBindParams;
 use Jcsp\SocialSdk\Model\SimulateAccountBindInfo;
 use Jcsp\SocialSdk\Model\SimulateAccountUnbindParams;
+use Jcsp\SocialSdk\Model\SimulateBindAccountResult;
 use Jcsp\SocialSdk\Model\SimulateVideoPostParams;
 use Jcsp\SocialSdk\Model\SimulateAccount;
 use Jcsp\SocialSdk\Model\SimulatePostTask;
@@ -47,9 +48,9 @@ interface SimulateInterface
     /**
      * 绑定账号
      * @param SimulateAccountBindParams $params
-     * @return CommonResult
+     * @return SimulateBindAccountResult
      */
-    public function bindAccount(SimulateAccountBindParams $params): CommonResult;
+    public function bindAccount(SimulateAccountBindParams $params): SimulateBindAccountResult;
 
     /**
      * 账号绑定回调处理
@@ -67,9 +68,9 @@ interface SimulateInterface
 
     /**
      * 解绑账号
-     * @param SimulateAccountUnbindParams $params
+     * @param string $taskId
      * @return CommonResult
      */
-    public function unbindAccount(SimulateAccountUnbindParams $params): CommonResult;
+    public function unbindAccount(string $taskId): CommonResult;
 
 }

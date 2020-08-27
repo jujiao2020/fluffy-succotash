@@ -7,6 +7,7 @@ use Jcsp\SocialSdk\Contract\LoggerInterface;
 use Jcsp\SocialSdk\Contract\SimulateInterface;
 use Jcsp\SocialSdk\Exception\SocialSdkException;
 use Jcsp\SocialSdk\Model\CommonResult;
+use Jcsp\SocialSdk\Model\SimulateBindAccountResult;
 use Jcsp\SocialSdk\Model\SimulatePostTask;
 use Jcsp\SocialSdk\Model\SimulateAccountBindVerificationParams;
 use Jcsp\SocialSdk\Model\SimulateAccountBindParams;
@@ -299,11 +300,11 @@ class SimulateClient implements SimulateInterface
     /**
      * 绑定账号
      * @param SimulateAccountBindParams $params
-     * @return CommonResult
+     * @return SimulateBindAccountResult
      * @throws SocialSdkException
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function bindAccount(SimulateAccountBindParams $params): CommonResult
+    public function bindAccount(SimulateAccountBindParams $params): SimulateBindAccountResult
     {
         // 校验
         if (strlen($params->getSocialMediaName()) == 0) {
@@ -348,14 +349,14 @@ class SimulateClient implements SimulateInterface
         ]);
 
         // 处理响应，响应格式：
-        // {"status": 200, "msg": "成功加入授权账号队列"}
+        // {"status": 200, "msg": "成功加入授权账号队列", "task_id": "xxxxxxxx"}
         $resBody = "";
         try {
             $resBody = $res->getBody()->getContents();
         } catch (\Exception $ex) {
         }
         $resData = json_decode($resBody, true);
-        $hasError = $res->getStatusCode() != 200 || empty($resData) || !is_array($resData) || $resData['status'] >= 400;
+        $hasError = $res->getStatusCode() != 200 || empty($resData) || !is_array($resData) || $resData['status'] >= 400 || !isset($resData['task_id']);
 
         // 写日志
         $requestParams['pwd'] = '******';
@@ -367,11 +368,51 @@ class SimulateClient implements SimulateInterface
             throw new SocialSdkException("调用账号绑定接口失败：$resBody");
         }
 
+        // 计算状态值
+        $status = $this->calTaskStatus3((int)($resData['status'] ?? 0));
+
+        // 根据结果构建绑定处理信息
+        $bindInfoData = $resData['data'] ?? [];
+        $info = null;
+        if (!empty($bindInfoData)) {
+            $info = new SimulateAccountBindInfo();
+            $info->setUserId((string)($bindInfoData['user_id'] ?? ''));
+            $info->setAccount((string)($bindInfoData['account'] ?? ''));
+            $info->setSocialId((string)($bindInfoData['social_id'] ?? ''));
+            $info->setMsg((string)($bindInfoData['msg'] ?? ''));
+            $info->setStatus($status);
+            $info->setVerifyType((int)($bindInfoData['verify_type'] ?? ''));
+            $info->setVerifyTips((string)($bindInfoData['verify_tips'] ?? ''));
+            $info->setDisplayName((string)($bindInfoData['display_name'] ?? ''));
+            $info->setHeadImgUrl((string)($bindInfoData['head_img_url'] ?? ''));
+            $info->setPageUrl((string)($bindInfoData['page_url'] ?? ''));
+        }
+
         // 返回结果
-        $result = new CommonResult();
+        $result = new SimulateBindAccountResult();
         $result->setStatus(200);
         $result->setMsg((string)($resData['msg'] ?? ''));
+        $result->setTaskId((string)($resData['task_id'] ?? ''));
+        $result->setSimulateAccountBindInfo($info);
         return $result;
+    }
+
+    /**
+     * 计算绑定任务状态
+     * @param int $status
+     * @return int
+     */
+    private function calTaskStatus3(int $status): int
+    {
+        // 计算状态
+        if ($status == 200) {
+            $taskStatus = SimulateAccountBindInfo::BIND_STATUS_NEED_VERIFICATION;
+        } elseif ($status == 202) {
+            $taskStatus = SimulateAccountBindInfo::BIND_STATUS_SUCCESS;
+        } else {
+            $taskStatus = SimulateAccountBindInfo::BIND_STATUS_FAIL;
+        }
+        return $taskStatus;
     }
 
     /**
@@ -473,29 +514,21 @@ class SimulateClient implements SimulateInterface
 
     /**
      * 解绑账号
-     * @param SimulateAccountUnbindParams $params
+     * @param string $taskId
      * @return CommonResult
      * @throws SocialSdkException
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function unbindAccount(SimulateAccountUnbindParams $params): CommonResult
+    public function unbindAccount(string $taskId): CommonResult
     {
         // 校验
-        if (strlen($params->getUserId()) == 0) {
-            throw new SocialSdkException("用户id不能为空");
-        }
-        if (strlen($params->getSocialMediaName()) == 0) {
-            throw new SocialSdkException("社媒名称不能为空");
-        }
-        if (strlen($params->getAccount()) == 0) {
-            throw new SocialSdkException("用户账号不能为空");
+        if (strlen($taskId) == 0) {
+            throw new SocialSdkException("任务id不能为空");
         }
 
         // 构造参数
         $requestParams = [
-            'user_id' => $params->getUserId(),
-            'user' => $params->getAccount(),
-            'media' => strtolower($params->getSocialMediaName()),
+            'task_id' => $taskId,
         ];
 
         // 请求链接
