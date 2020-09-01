@@ -474,7 +474,7 @@ class SimulateClient implements SimulateInterface
         ];
 
         // 请求链接
-        $endpoint = $this->config['bind_account_submit_verify_endpoint'] ?? '';
+        $endpoint = $this->config['bind_account_submit_verification_endpoint'] ?? '';
         if (empty($endpoint)) {
             throw new SocialSdkException('用户账号绑定提交验证信息接口链接不能为空');
         }
