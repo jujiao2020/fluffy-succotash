@@ -18,16 +18,10 @@ class SimulateAccountBindVerificationParams
     private $socialMediaName = '';
 
     /**
-     * 用户id
+     * 任务id
      * @var string
      */
-    private $userId = 0;
-
-    /**
-     * 用户社媒登陆账号
-     * @var string
-     */
-    private $account = '';
+    private $taskId = '';
 
     /**
      * 校验信息，通常是校验码
@@ -54,33 +48,17 @@ class SimulateAccountBindVerificationParams
     /**
      * @return string
      */
-    public function getUserId(): string
+    public function getTaskId(): string
     {
-        return $this->userId;
+        return $this->taskId;
     }
 
     /**
-     * @param string $userId
+     * @param string $taskId
      */
-    public function setUserId(string $userId): void
+    public function setTaskId(string $taskId): void
     {
-        $this->userId = $userId;
-    }
-
-    /**
-     * @return string
-     */
-    public function getAccount(): string
-    {
-        return $this->account;
-    }
-
-    /**
-     * @param string $account
-     */
-    public function setAccount(string $account): void
-    {
-        $this->account = $account;
+        $this->taskId = $taskId;
     }
 
     /**

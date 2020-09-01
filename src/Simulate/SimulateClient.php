@@ -455,11 +455,8 @@ class SimulateClient implements SimulateInterface
         if (strlen($params->getSocialMediaName()) == 0) {
             throw new SocialSdkException("社媒名称不能为空");
         }
-        if (strlen($params->getUserId()) == 0) {
-            throw new SocialSdkException("用户id不能为空");
-        }
-        if (strlen($params->getAccount()) == 0) {
-            throw new SocialSdkException("用户账号不能为空");
+        if (strlen($params->getTaskId()) == 0) {
+            throw new SocialSdkException("任务id不能为空");
         }
         if (strlen($params->getVerificationString()) == 0) {
             throw new SocialSdkException("校验信息不能为空");
@@ -468,8 +465,7 @@ class SimulateClient implements SimulateInterface
         // 构造参数
         $requestParams = [
             'verify' => $params->getVerificationString(),
-            'user_id' => $params->getUserId(),
-            'user' => $params->getAccount(),
+            'task_id' => $params->getTaskId(),
             'media' => strtolower($params->getSocialMediaName()),
         ];
 
