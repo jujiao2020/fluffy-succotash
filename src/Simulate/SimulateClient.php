@@ -69,7 +69,7 @@ class SimulateClient implements SimulateInterface
             'callback' => $params->getCallbackUrl(),
             'media' => strtolower($params->getSocialMediaName()),
             'user' => $params->getAccount(),
-            'account_type' => $params->getAccount(),
+            'account_type' => $params->getAccountType(),
         ];
 
         // 请求链接
