@@ -69,8 +69,12 @@ class SimulateClient implements SimulateInterface
             'callback' => $params->getCallbackUrl(),
             'media' => strtolower($params->getSocialMediaName()),
             'user' => $params->getAccount(),
-            'account_type' => $params->getAccountType(),
         ];
+
+        // 区分大v分享和个人账号分享，个人分享需要传这个字段
+        if ($params->getAccountType() > 0) {
+            $requestParams['account_type'] = $params->getAccountType();
+        }
 
         // 请求链接
         $endpoint = $this->config['post_video_endpoint'] ?? '';
