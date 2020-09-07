@@ -30,6 +30,12 @@ class SimulateAccountBindInfo
     private $userId = 0;
 
     /**
+     * 社媒英文名称
+     * @var string
+     */
+    private $socialMediaName = '';
+
+    /**
      * 用户社媒登陆账号
      * @var string
      */
@@ -97,6 +103,22 @@ class SimulateAccountBindInfo
     public function setUserId(string $userId): void
     {
         $this->userId = $userId;
+    }
+
+    /**
+     * @return string
+     */
+    public function getSocialMediaName(): string
+    {
+        return $this->socialMediaName;
+    }
+
+    /**
+     * @param string $socialMediaName
+     */
+    public function setSocialMediaName(string $socialMediaName): void
+    {
+        $this->socialMediaName = $socialMediaName;
     }
 
     /**

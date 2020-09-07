@@ -443,6 +443,7 @@ class SimulateClient implements SimulateInterface
         $obj->setDisplayName((string)($requestParams['display_name'] ?? ''));
         $obj->setHeadImgUrl((string)($requestParams['head_img_url'] ?? ''));
         $obj->setPageUrl((string)($requestParams['page_url'] ?? ''));
+        $obj->setSocialMediaName(strtolower((string)($requestParams['media'] ?? '')));
         return $obj;
     }
 
