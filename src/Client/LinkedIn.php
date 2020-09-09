@@ -285,6 +285,7 @@ class LinkedIn extends OAuth2 implements ShareInterface
         $userProfile->setFullName($name);
         $userProfile->setEmail('');
         $userProfile->setBirthday(0);
+        $userProfile->setParams((array)($result ?? []));
 
         return $userProfile;
     }

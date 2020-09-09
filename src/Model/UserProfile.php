@@ -55,6 +55,12 @@ class UserProfile implements UserProfileInterface
     private $link = '';
 
     /**
+     * 原数据
+     * @var array
+     */
+    private $params = [];
+
+    /**
      * @return string
      */
     public function getId(): string
@@ -164,6 +170,22 @@ class UserProfile implements UserProfileInterface
     public function setLink(string $link): void
     {
         $this->link = $link;
+    }
+
+    /**
+     * @return array
+     */
+    public function getParams(): array
+    {
+        return $this->params;
+    }
+
+    /**
+     * @param array $params
+     */
+    public function setParams(array $params): void
+    {
+        $this->params = $params;
     }
 
 }

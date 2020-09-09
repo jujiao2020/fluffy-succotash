@@ -138,6 +138,7 @@ class Pinterest extends OAuth2 implements ShareInterface
         $userProfile = new UserProfile();
         $userProfile->setId((string)($user->id ?? ''));
         $userProfile->setFullName($user->username ?? ((string)($user->first_name ?? '') . (string)($user->last_name ?? '')));
+        $userProfile->setParams(json_decode(json_encode($user ?? []), true));
         return $userProfile;
     }
 

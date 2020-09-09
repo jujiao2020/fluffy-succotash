@@ -245,6 +245,7 @@ class Twitter extends OAuth1 implements ShareInterface
         $userProfile->setFullName((string)($user->name ?? ''));
         $userProfile->setEmail('');
         $userProfile->setBirthday(0);
+        $userProfile->setParams(json_decode(json_encode($user ?: []), true));
         return $userProfile;
     }
 

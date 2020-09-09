@@ -151,6 +151,7 @@ class Tumblr extends OAuth1 implements ShareInterface
         $userProfile->setPictureUrl('');
         $userProfile->setFullName((string)($info->user->name ?? ''));
         $userProfile->setEmail('');
+        $userProfile->setParams(json_decode(json_encode($info->user ?? []), true));
         return $userProfile;
     }
 

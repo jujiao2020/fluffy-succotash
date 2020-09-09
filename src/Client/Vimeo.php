@@ -179,6 +179,7 @@ class Vimeo extends OAuth2 implements ShareInterface
         $userProfile->setEmail('');
         $userProfile->setBirthday(0);
         $userProfile->setLink((string)($response['body']['link'] ?? ''));
+        $userProfile->setParams((array)($response['body'] ?? []));
 
         return $userProfile;
     }

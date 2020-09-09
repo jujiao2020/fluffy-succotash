@@ -206,6 +206,7 @@ class Facebook extends OAuth2 implements ShareInterface
         $userProfile->setFullName((string)($graphUser->getName() ?? ''));
         $userProfile->setEmail((string)($graphUser->getEmail() ?? ''));
         $userProfile->setBirthday($graphUser->getBirthday()->getTimestamp());
+        $userProfile->setParams($graphUser->asArray() ?? []);
 
         return $userProfile;
     }

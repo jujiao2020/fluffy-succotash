@@ -79,6 +79,7 @@ class Youtube extends OAuth2 implements ShareInterface
      * @param string $code
      * @param string $state
      * @return AccessToken
+     * @throws SocialSdkException
      */
     public function getAccessTokenInAuthorizationCodeModeByClient(string $code, string $state): AccessToken
     {
@@ -89,6 +90,12 @@ class Youtube extends OAuth2 implements ShareInterface
         $this->lib->setAccessType('offline');
         $this->lib->setApprovalPrompt('force');
         $accessTokenData = $this->lib->fetchAccessTokenWithAuthCode($code);
+
+        // 异常情况
+        // $accessTokenData：{error: "invalid_client", error_description: "Unauthorized"}
+        if (isset($accessTokenData['error'])) {
+            throw new SocialSdkException($accessTokenData['error_description'] ?? $accessTokenData['error'] ?? json_encode($accessTokenData, JSON_UNESCAPED_UNICODE));
+        }
 
         // 写日志
         $this->writeLog("info", "code：{$code}\n响应结果：\n" . var_export($accessTokenData, true));
@@ -130,11 +137,18 @@ class Youtube extends OAuth2 implements ShareInterface
      * 刷新 AccessToken
      * @param string $refreshToken
      * @return AccessToken
+     * @throws SocialSdkException
      */
     public function refreshAccessTokenByClient(string $refreshToken): AccessToken
     {
         // 刷新 token
         $accessTokenData = $this->lib->refreshToken($refreshToken);
+
+        // 异常情况
+        // $accessTokenData：{error: "invalid_client", error_description: "Unauthorized"}
+        if (isset($accessTokenData['error'])) {
+            throw new SocialSdkException($accessTokenData['error_description'] ?? $accessTokenData['error'] ?? json_encode($accessTokenData, JSON_UNESCAPED_UNICODE));
+        }
 
         // 写日志
         $this->writeLog("info", "refresh_token：{$refreshToken}\n响应结果：\n" . var_export($accessTokenData, true));
@@ -178,6 +192,7 @@ class Youtube extends OAuth2 implements ShareInterface
         $userProfile->setPictureUrl((string)($userData->getPicture() ?: ''));
         $userProfile->setFullName((string)($userData->getName() ?: ''));
         $userProfile->setEmail((string)($userData->getEmail() ?: ''));
+        $userProfile->setParams(json_decode(json_encode($userData->toSimpleObject()), true));
         return $userProfile;
     }
 
@@ -187,7 +202,7 @@ class Youtube extends OAuth2 implements ShareInterface
      */
     public function canShareToUser(): bool
     {
-        return true;
+        return false;
     }
 
     /**
@@ -196,7 +211,7 @@ class Youtube extends OAuth2 implements ShareInterface
      */
     public function canShareToChannel(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -205,8 +220,77 @@ class Youtube extends OAuth2 implements ShareInterface
      */
     public function getShareChannelList(): array
     {
-        // TODO:
-        return [];
+        // https://developers.google.com/youtube/v3/docs/channels/list
+
+        // Youtube 上传视频到用户即可，无需这个
+        $service = new \Google_Service_YouTube($this->lib);
+        $queryParams = [
+            'mine' => true
+        ];
+        // part 包含 snippet 会消耗 2 个 unit
+        $response = $service->channels->listChannels('id,snippet', $queryParams);
+        $this->writeLog("info", "获取用户频道成功:\n" . var_export($response, true));
+
+        // {
+        //   "kind": "youtube#channelListResponse",
+        //   "etag": "nmc1hMFok54OXUBQVnKfzTmTUwI",
+        //   "pageInfo": {
+        //     "totalResults": 1,
+        //     "resultsPerPage": 1
+        //   },
+        //   "items": [
+        //     {
+        //       "kind": "youtube#channel",
+        //       "etag": "lgsWd0zFDngQfkzYrdqh85UXTD",
+        //       "id": "UC6nVQxAHkJafnpsPpo7eh",
+        //       "snippet": {
+        //         "title": "Hshdt Kajdhd",
+        //         "description": "",
+        //         "publishedAt": "2020-05-07T01:30:47Z",
+        //         "thumbnails": {
+        //           "default": {
+        //             "url": "https://yt3.ggpht.com/a/AATXAJzC2jpcmmBCHKxEX5LkBoolkCkWfXA52JEU_A=s88-c-k-c0xffffffff-no-rj-mo",
+        //             "width": 88,
+        //             "height": 88
+        //           },
+        //           "medium": {
+        //             "url": "https://yt3.ggpht.com/a/AATXAJzC2jpcmmBCHKxEX5LkBoolkCkWfXA52JEU_A=s240-c-k-c0xffffffff-no-rj-mo",
+        //             "width": 240,
+        //             "height": 240
+        //           },
+        //           "high": {
+        //             "url": "https://yt3.ggpht.com/a/AATXAJzC2jpcmmBCHKxEX5LkBoolkCkWfXA52JEU_A=s800-c-k-c0xffffffff-no-rj-mo",
+        //             "width": 800,
+        //             "height": 800
+        //           }
+        //         },
+        //         "localized": {
+        //           "title": "Hshdt Kajdhd",
+        //           "description": ""
+        //         }
+        //       }
+        //     }
+        //   ]
+        // }
+
+        // 构造数据
+        $channelList = [];
+        /** @var \Google_Service_YouTube_Channel $item */
+        foreach ($response->getItems() as $item) {
+            $snippet = $item->getSnippet() ?? new \Google_Service_YouTube_ChannelSnippet();
+            $channel = new Channel();
+            $channel->setId((string)($item->getId() ?? ''));
+            $channel->setName((string)($snippet->getTitle() ?? ''));
+            if (!empty($item->getId())) {
+                $channel->setUrl("https://www.youtube.com/channel/{$item->getId()}");
+            }
+            $channel->setToken((string)($page['access_token'] ?? ''));
+            $params = json_decode(json_encode($item->toSimpleObject()), true);
+            $channel->setParams($params);
+            $channelList[] = $channel;
+        }
+
+        return $channelList;
     }
 
     /**
@@ -216,6 +300,7 @@ class Youtube extends OAuth2 implements ShareInterface
      */
     public function shareVideo(VideoShareParams $params): VideoShareResult
     {
+        // https://developers.google.com/youtube/v3/docs/videos/insert
         // https://github.com/googleapis/google-api-php-client/blob/master/examples/large-file-upload.php
 
         // 下载视频到本地
@@ -253,6 +338,7 @@ class Youtube extends OAuth2 implements ShareInterface
 
         // Create a request for the API's videos.insert method to create and upload the video.
         $insertRequest = $youtube->videos->insert('status,snippet', $video);
+        // $insertRequest = $youtube->videos->insert('status,snippet', $video, ['onBehalfOfContentOwner' => ]);
 
         // Create a MediaFileUpload object for resumable uploads.
         $media = new \Google_Http_MediaFileUpload(

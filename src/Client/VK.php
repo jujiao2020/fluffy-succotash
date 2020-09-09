@@ -232,6 +232,7 @@ class VK extends OAuth2 implements ShareInterface
         $userProfile->setFullName((string)($response[0]['first_name'] . ' ' . $response[0]['last_name'] ?? ''));
         $userProfile->setEmail("");
         $userProfile->setBirthday(0);
+        $userProfile->setParams(array($response[0] ?? []));
 
         return $userProfile;
     }
