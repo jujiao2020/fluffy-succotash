@@ -130,6 +130,11 @@ class Facebook extends OAuth2 implements ShareInterface
         //   )),
         // ))
 
+        $fbAccessTokenParams = [
+            'value' => $fbAccessToken->getValue(),
+            'expiresAt' => $fbAccessToken->getExpiresAt(),
+        ];
+
         // 构造数据
         $accessToken = new AccessToken();
         $accessToken->setToken((string)($fbAccessToken->getValue() ?? ''));
@@ -139,7 +144,7 @@ class Facebook extends OAuth2 implements ShareInterface
         }
         $accessToken->setRefreshToken(''); // 没给，user access token 过期要重新进行授权
         $accessToken->setScope([]);
-        $accessToken->setParams([]);
+        $accessToken->setParams($fbAccessTokenParams);
         $accessToken->setUserId('');
 
         return $accessToken;
