@@ -440,6 +440,7 @@ class SimulateClient implements SimulateInterface
         $obj->setStatus((int)($requestParams['status'] ?? ''));
         $obj->setVerifyType((int)($requestParams['verify_type'] ?? ''));
         $obj->setVerifyTips((string)($requestParams['verify_tips'] ?? ''));
+        $obj->setVerifyUrl((string)($requestParams['verify_url'] ?? ''));
         $obj->setDisplayName((string)($requestParams['display_name'] ?? ''));
         $obj->setHeadImgUrl((string)($requestParams['head_img_url'] ?? ''));
         $obj->setPageUrl((string)($requestParams['page_url'] ?? ''));

@@ -84,6 +84,12 @@ class SimulateAccountBindInfo
     private $verifyTips = "";
 
     /**
+     * 人机验证url
+     * @var string
+     */
+    private $verifyUrl = "";
+
+    /**
      * 信息
      * @var string
      */
@@ -263,6 +269,22 @@ class SimulateAccountBindInfo
     public function setMsg(string $msg): void
     {
         $this->msg = $msg;
+    }
+
+    /**
+     * @return string
+     */
+    public function getVerifyUrl(): string
+    {
+        return $this->verifyUrl;
+    }
+
+    /**
+     * @param string $verifyUrl
+     */
+    public function setVerifyUrl(string $verifyUrl): void
+    {
+        $this->verifyUrl = $verifyUrl;
     }
 
 }
