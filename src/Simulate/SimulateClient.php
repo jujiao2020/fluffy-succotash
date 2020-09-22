@@ -11,7 +11,6 @@ use Jcsp\SocialSdk\Model\SimulateBindAccountResult;
 use Jcsp\SocialSdk\Model\SimulatePostTask;
 use Jcsp\SocialSdk\Model\SimulateAccountBindVerificationParams;
 use Jcsp\SocialSdk\Model\SimulateAccountBindParams;
-use Jcsp\SocialSdk\Model\SimulateAccountUnbindParams;
 use Jcsp\SocialSdk\Model\SimulateAccountBindInfo;
 use Jcsp\SocialSdk\Model\SimulateVideoPostParams;
 use Jcsp\SocialSdk\Model\SimulateAccount;
@@ -380,6 +379,7 @@ class SimulateClient implements SimulateInterface
         $info = null;
         if (!empty($bindInfoData)) {
             $info = new SimulateAccountBindInfo();
+            $info->setTaskId((string)($resData['task_id'] ?? ''));
             $info->setUserId((string)($bindInfoData['user_id'] ?? ''));
             $info->setAccount((string)($bindInfoData['account'] ?? ''));
             $info->setSocialId((string)($bindInfoData['social_id'] ?? ''));
@@ -433,6 +433,7 @@ class SimulateClient implements SimulateInterface
 
         // 构造数据
         $obj = new SimulateAccountBindInfo();
+        $obj->setTaskId((string)($requestParams['task_id'] ?? ''));
         $obj->setUserId((string)($requestParams['user_id'] ?? ''));
         $obj->setAccount((string)($requestParams['account'] ?? ''));
         $obj->setSocialId((string)($requestParams['social_id'] ?? ''));

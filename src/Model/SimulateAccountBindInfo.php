@@ -24,6 +24,12 @@ class SimulateAccountBindInfo
     const BIND_STATUS_VERIFICATION_HANDLING = 4;
 
     /**
+     * 任务id
+     * @var string
+     */
+    private $taskId = '';
+
+    /**
      * 用户id
      * @var string
      */
@@ -94,6 +100,22 @@ class SimulateAccountBindInfo
      * @var string
      */
     private $msg = "";
+
+    /**
+     * @return string
+     */
+    public function getTaskId(): string
+    {
+        return $this->taskId;
+    }
+
+    /**
+     * @param string $taskId
+     */
+    public function setTaskId(string $taskId): void
+    {
+        $this->taskId = $taskId;
+    }
 
     /**
      * @return string
