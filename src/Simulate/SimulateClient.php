@@ -319,7 +319,7 @@ class SimulateClient implements SimulateInterface
         if (strlen($params->getAccount()) == 0) {
             throw new SocialSdkException("用户账号不能为空");
         }
-        if (strlen($params->getPwd()) == 0) {
+        if (strlen($params->getPwd()) == 0 && strlen($params->getTaskId()) == 0) {
             throw new SocialSdkException("用户密码不能为空");
         }
         if (strlen($params->getCallbackUrl()) == 0) {
@@ -330,10 +330,14 @@ class SimulateClient implements SimulateInterface
         $requestParams = [
             'user_id' => $params->getUserId(),
             'user' => $params->getAccount(),
-            'pwd' => $params->getPwd(),
             'media' => strtolower($params->getSocialMediaName()),
             'callback' => $params->getCallbackUrl(),
         ];
+        if (strlen($params->getTaskId()) == 0) { // pwd 和 task_id 只能传一个
+            $requestParams['pwd'] = $params->getPwd();
+        } else {
+            $requestParams['task_id'] = $params->getTaskId();
+        }
         if (strlen($params->getPhone()) > 0) {
             $requestParams['phone'] = $params->getPhone();
         }
@@ -362,7 +366,9 @@ class SimulateClient implements SimulateInterface
         $hasError = $res->getStatusCode() != 200 || empty($resData) || !is_array($resData) || $resData['status'] >= 400 || !isset($resData['task_id']);
 
         // 写日志
-        $requestParams['pwd'] = '******';
+        if (isset($requestParams['pwd'])) {
+            $requestParams['pwd'] = '******';
+        }
         $logStr = "请求url：{$endpoint}\n请求参数：\n" . var_export($requestParams, true) . "\n响应状态码：{$res->getStatusCode()}，响应结果：\n{$resBody}";
         $this->writeLog($hasError ? 'error' : 'info', $logStr);
 
@@ -431,6 +437,18 @@ class SimulateClient implements SimulateInterface
         $logStr = "访问路径: {$requestUri}， 请求参数：\n" . var_export($requestParams, true);
         $this->writeLog('info', $logStr);
 
+        // 发生错误时的错误码
+        // 正常：0， 账号密码错误：1， 人机验证：2，验证码错误/超时：3， 其他：4
+        $errCode = (int)($requestParams['err_code'] ?? 0);
+        $errCodeMap = [
+            0 => SimulateAccountBindInfo::ERROR_CODE_NONE,
+            1 => SimulateAccountBindInfo::ERROR_CODE_ACCOUNT_OR_PWD_INCORRECT,
+            2 => SimulateAccountBindInfo::ERROR_CODE_VERIFY_EXPIRED,
+            3 => SimulateAccountBindInfo::ERROR_CODE_NEED_MAN_MACHINE_VERIFICATION,
+            4 => SimulateAccountBindInfo::ERROR_CODE_UNKNOWN,
+        ];
+        $errCode = $errCodeMap[$errCode] ?? SimulateAccountBindInfo::ERROR_CODE_UNKNOWN;
+
         // 构造数据
         $obj = new SimulateAccountBindInfo();
         $obj->setTaskId((string)($requestParams['task_id'] ?? ''));
@@ -446,6 +464,7 @@ class SimulateClient implements SimulateInterface
         $obj->setHeadImgUrl((string)($requestParams['head_img_url'] ?? ''));
         $obj->setPageUrl((string)($requestParams['page_url'] ?? ''));
         $obj->setSocialMediaName(strtolower((string)($requestParams['media'] ?? '')));
+        $obj->setErrCode($errCode);
         return $obj;
     }
 

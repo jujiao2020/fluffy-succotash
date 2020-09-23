@@ -29,6 +29,12 @@ class SimulateAccountBindParams
     private $pwd = '';
 
     /**
+     * 任务id（重新绑定的时候，允许不提供密码，只提供任务id）
+     * @var string
+     */
+    private $taskId = '';
+
+    /**
      * 社媒英文名称
      * @var string
      */
@@ -92,6 +98,22 @@ class SimulateAccountBindParams
     public function setPwd(string $pwd): void
     {
         $this->pwd = $pwd;
+    }
+
+    /**
+     * @return string
+     */
+    public function getTaskId(): string
+    {
+        return $this->taskId;
+    }
+
+    /**
+     * @param string $taskId
+     */
+    public function setTaskId(string $taskId): void
+    {
+        $this->taskId = $taskId;
     }
 
     /**

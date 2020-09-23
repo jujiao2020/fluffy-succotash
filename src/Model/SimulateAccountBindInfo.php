@@ -23,6 +23,17 @@ class SimulateAccountBindInfo
     /** @var int 验证信息处理中 */
     const BIND_STATUS_VERIFICATION_HANDLING = 4;
 
+    /** @var int 无错误 */
+    const ERROR_CODE_NONE = 0;
+    /** @var int 提供的账号或密码错误 */
+    const ERROR_CODE_ACCOUNT_OR_PWD_INCORRECT = 1;
+    /** @var int 验证信息过期 */
+    const ERROR_CODE_VERIFY_EXPIRED = 2;
+    /** @var int 需要进行人机验证 */
+    const ERROR_CODE_NEED_MAN_MACHINE_VERIFICATION = 3;
+    /** @var int 未知错误 */
+    const ERROR_CODE_UNKNOWN = 99;
+
     /**
      * 任务id
      * @var string
@@ -100,6 +111,12 @@ class SimulateAccountBindInfo
      * @var string
      */
     private $msg = "";
+
+    /**
+     * 错误码
+     * @var int
+     */
+    private $errCode = 0;
 
     /**
      * @return string
@@ -307,6 +324,22 @@ class SimulateAccountBindInfo
     public function setVerifyUrl(string $verifyUrl): void
     {
         $this->verifyUrl = $verifyUrl;
+    }
+
+    /**
+     * @return int
+     */
+    public function getErrCode(): int
+    {
+        return $this->errCode;
+    }
+
+    /**
+     * @param int $errCode
+     */
+    public function setErrCode(int $errCode): void
+    {
+        $this->errCode = $errCode;
     }
 
 }
