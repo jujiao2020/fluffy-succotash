@@ -8,7 +8,6 @@ use Jcsp\SocialSdk\Model\CommonResult;
 use Jcsp\SocialSdk\Model\SimulateAccountBindVerificationParams;
 use Jcsp\SocialSdk\Model\SimulateAccountBindParams;
 use Jcsp\SocialSdk\Model\SimulateAccountBindInfo;
-use Jcsp\SocialSdk\Model\SimulateAccountUnbindParams;
 use Jcsp\SocialSdk\Model\SimulateBindAccountResult;
 use Jcsp\SocialSdk\Model\SimulateVideoPostParams;
 use Jcsp\SocialSdk\Model\SimulateAccount;

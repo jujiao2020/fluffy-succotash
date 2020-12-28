@@ -107,6 +107,12 @@ class SimulateAccountBindInfo
     private $verifyUrl = "";
 
     /**
+     * channel 列表
+     * @var SimulateChannel[]
+     */
+    private $channelList = [];
+
+    /**
      * 信息
      * @var string
      */
@@ -292,6 +298,22 @@ class SimulateAccountBindInfo
     public function setVerifyTips(string $verifyTips): void
     {
         $this->verifyTips = $verifyTips;
+    }
+
+    /**
+     * @return SimulateChannel[]
+     */
+    public function getChannelList(): array
+    {
+        return $this->channelList;
+    }
+
+    /**
+     * @param SimulateChannel[] $channelList
+     */
+    public function setChannelList(array $channelList): void
+    {
+        $this->channelList = $channelList;
     }
 
     /**

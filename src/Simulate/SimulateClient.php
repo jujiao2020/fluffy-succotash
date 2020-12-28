@@ -8,6 +8,7 @@ use Jcsp\SocialSdk\Contract\SimulateInterface;
 use Jcsp\SocialSdk\Exception\SocialSdkException;
 use Jcsp\SocialSdk\Model\CommonResult;
 use Jcsp\SocialSdk\Model\SimulateBindAccountResult;
+use Jcsp\SocialSdk\Model\SimulateChannel;
 use Jcsp\SocialSdk\Model\SimulatePostTask;
 use Jcsp\SocialSdk\Model\SimulateAccountBindVerificationParams;
 use Jcsp\SocialSdk\Model\SimulateAccountBindParams;
@@ -69,6 +70,11 @@ class SimulateClient implements SimulateInterface
             'media' => strtolower($params->getSocialMediaName()),
             'user' => $params->getAccount(),
         ];
+
+        // 分享到 channel 要传 social_id，分享到 user 不能传 channel
+        if ($params->getIsShareToChannel()) {
+            $requestParams['social_id'] = $params->getSocialId();
+        }
 
         // 区分大v分享和个人账号分享，个人分享需要传这个字段
         if ($params->getAccountType() > 0) {
@@ -449,6 +455,24 @@ class SimulateClient implements SimulateInterface
         ];
         $errCode = $errCodeMap[$errCode] ?? SimulateAccountBindInfo::ERROR_CODE_UNKNOWN;
 
+        // 处理 channel 数据s
+        /** @var SimulateChannel[] $newChannelList */
+        $newChannelList = [];
+        $channelList = json_decode($requestParams['page_info'] ?? '', true);
+        if (is_array($channelList)) {
+            foreach ($channelList as $channel) {
+                $newChannel = new SimulateChannel();
+                $newChannel->setTaskId((string)($channel['task_id'] ?? 0));
+                $newChannel->setUserId((int)($channel['user_id'] ?? 0));
+                $newChannel->setAccount((string)($channel['account'] ?? ''));
+                $newChannel->setSocialId((string)($channel['social_id']));
+                $newChannel->setDisplayName((string)($channel['display_name'] ?? ''));
+                $newChannel->setImgUrl((string)($channel['head_img_url'] ?? ''));
+                $newChannel->setPageUrl((string)($channel['page_url'] ?? ''));
+                $newChannelList[] = $newChannel;
+            }
+        }
+
         // 构造数据
         $obj = new SimulateAccountBindInfo();
         $obj->setTaskId((string)($requestParams['task_id'] ?? ''));
@@ -465,6 +489,7 @@ class SimulateClient implements SimulateInterface
         $obj->setPageUrl((string)($requestParams['page_url'] ?? ''));
         $obj->setSocialMediaName(strtolower((string)($requestParams['media'] ?? '')));
         $obj->setErrCode($errCode);
+        $obj->setChannelList($newChannelList);
         return $obj;
     }
 

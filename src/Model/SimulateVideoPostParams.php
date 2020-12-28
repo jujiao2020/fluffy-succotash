@@ -53,6 +53,18 @@ class SimulateVideoPostParams
     private $account = '';
 
     /**
+     * 社媒id
+     * @var string
+     */
+    private $socialId = '';
+
+    /**
+     * 是否是分享到 channel（不是的话就分享到 user）
+     * @var bool
+     */
+    private $isShareToChannel = false;
+
+    /**
      * 账号类型（0：官方账号，1：个人账号）
      * @var int
      */
@@ -152,6 +164,38 @@ class SimulateVideoPostParams
     public function setAccount(string $account): void
     {
         $this->account = $account;
+    }
+
+    /**
+     * @return string
+     */
+    public function getSocialId(): string
+    {
+        return $this->socialId;
+    }
+
+    /**
+     * @param string $socialId
+     */
+    public function setSocialId(string $socialId): void
+    {
+        $this->socialId = $socialId;
+    }
+
+    /**
+     * @return bool
+     */
+    public function getIsShareToChannel(): bool
+    {
+        return $this->isShareToChannel;
+    }
+
+    /**
+     * @param bool $isShareToChannel
+     */
+    public function setIsShareToChannel(bool $isShareToChannel): void
+    {
+        $this->isShareToChannel = $isShareToChannel;
     }
 
     /**
