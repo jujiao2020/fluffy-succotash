@@ -34,6 +34,12 @@ class SimulateClient implements SimulateInterface
     private $config;
 
     /**
+     * 是否测试
+     * @var bool
+     */
+    protected $isTest = false;
+
+    /**
      * SimulateClient constructor.
      * @param LoggerInterface $logger
      * @param array $config
@@ -88,6 +94,7 @@ class SimulateClient implements SimulateInterface
         }
 
         // 发起请求
+        $this->warpTestParams($requestParams);
         $client = new \GuzzleHttp\Client();
         $res = $client->request('POST', $endpoint, [
             'form_params' => $requestParams,
@@ -355,6 +362,7 @@ class SimulateClient implements SimulateInterface
         }
 
         // 发起请求
+        $this->warpTestParams($requestParams);
         $client = new \GuzzleHttp\Client();
         $res = $client->request('POST', $endpoint, [
             'form_params' => $requestParams,
@@ -527,6 +535,7 @@ class SimulateClient implements SimulateInterface
         }
 
         // 发起请求
+        $this->warpTestParams($requestParams);
         $client = new \GuzzleHttp\Client();
         $res = $client->request('POST', $endpoint, [
             'form_params' => $requestParams,
@@ -585,6 +594,7 @@ class SimulateClient implements SimulateInterface
         }
 
         // 发起请求
+        $this->warpTestParams($requestParams);
         $client = new \GuzzleHttp\Client();
         $res = $client->request('POST', $endpoint, [
             'form_params' => $requestParams,
@@ -630,6 +640,35 @@ class SimulateClient implements SimulateInterface
             $type = $backtrace[1]['function'] ?? 'zzz';
         }
         $this->logger->writeLog($level, $content, "simulate/{$type}");
+    }
+
+    /**
+     * 设置是否走测试场景
+     * @param bool $isTest
+     */
+    public function setIsTest(bool $isTest): void
+    {
+        $this->isTest = $isTest;
+    }
+
+    /**
+     * 获取当前是否走测试场景
+     * @return bool
+     */
+    public function getIsTest(): bool
+    {
+        return $this->isTest;
+    }
+
+    /**
+     * 为参数增加测试标记
+     * @param array $requestParams
+     */
+    private function warpTestParams(array &$requestParams): void
+    {
+        if ($this->isTest) {
+            $requestParams['test'] = 1;
+        }
     }
 
 }

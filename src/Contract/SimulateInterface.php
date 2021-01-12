@@ -18,6 +18,18 @@ interface SimulateInterface
 {
 
     /**
+     * 设置是否走测试场景
+     * @param bool $isTest
+     */
+    public function setIsTest(bool $isTest): void;
+
+    /**
+     * 获取当前是否走测试场景
+     * @return bool
+     */
+    public function getIsTest(): bool;
+
+    /**
      * 模拟登录发布视频
      * @param SimulateVideoPostParams $params
      * @return SimulatePostTask
