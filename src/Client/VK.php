@@ -5,6 +5,7 @@ namespace Jcsp\SocialSdk\Client;
 
 
 use Jcsp\SocialSdk\Contract\ShareInterface;
+use Jcsp\SocialSdk\Exception\ShareException;
 use Jcsp\SocialSdk\Exception\SocialSdkException;
 use Jcsp\SocialSdk\Model\AccessToken;
 use Jcsp\SocialSdk\Model\AuthConfig;
@@ -12,6 +13,9 @@ use Jcsp\SocialSdk\Model\Channel;
 use Jcsp\SocialSdk\Model\UserProfile;
 use Jcsp\SocialSdk\Model\VideoShareParams;
 use Jcsp\SocialSdk\Model\VideoShareResult;
+use VK\Exceptions\Api\VKApiAccessException;
+use VK\Exceptions\Api\VKApiAccessGroupException;
+use VK\Exceptions\Api\VKApiAccessGroupsException;
 
 class VK extends OAuth2 implements ShareInterface
 {
@@ -258,7 +262,7 @@ class VK extends OAuth2 implements ShareInterface
     /**
      * 获取要分享到的频道列表
      * @return array
-     * @throws \VK\Exceptions\Api\VKApiAccessGroupsException
+     * @throws ShareException
      * @throws \VK\Exceptions\VKApiException
      * @throws \VK\Exceptions\VKClientException
      */
@@ -269,7 +273,12 @@ class VK extends OAuth2 implements ShareInterface
             'user_id' => $this->accessToken->getUserId(),
             'extended' => 1, // 1 — to return complete information about a user's communities 0 — to return a list of community IDs without any additional fields (default)
         ];
-        $response = $this->lib->groups()->get($this->accessToken->getToken(), $params);
+
+        try {
+            $response = $this->lib->groups()->get($this->accessToken->getToken(), $params);
+        } catch (VKApiAccessException|VKApiAccessGroupException|VKApiAccessGroupsException $ex) {
+            throw (new ShareException($ex->getMessage(), $ex->getCode(), $ex))->setDevMsg($ex->getMessage())->setUnauthorized(true);
+        }
 
         // 日志记录
         $this->writeLog("info", "groups.get: \n请求参数：" . var_export($params, true) . "\n响应结果" . var_export($response, true));

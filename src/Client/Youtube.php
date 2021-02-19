@@ -4,6 +4,7 @@ namespace Jcsp\SocialSdk\Client;
 
 
 use Jcsp\SocialSdk\Contract\ShareInterface;
+use Jcsp\SocialSdk\Exception\ShareException;
 use Jcsp\SocialSdk\Exception\SocialSdkException;
 use Jcsp\SocialSdk\Model\AccessToken;
 use Jcsp\SocialSdk\Model\AuthConfig;
@@ -297,6 +298,7 @@ class Youtube extends OAuth2 implements ShareInterface
      * 视频分享
      * @param VideoShareParams $params
      * @return VideoShareResult
+     * @throws ShareException
      */
     public function shareVideo(VideoShareParams $params): VideoShareResult
     {
@@ -311,7 +313,11 @@ class Youtube extends OAuth2 implements ShareInterface
         $snippet->setTitle($params->getTitle());
         $snippet->setDescription($params->getDescription());
 
-        // $snippet->setTags($tags);
+        $keywordsStr = $params->getKeywords();
+        $keywords = array_unique(array_filter(explode(',', $keywordsStr)));
+        if (count($keywords) > 0) {
+            $snippet->setTags($keywords);
+        }
 
         // Numeric video category. See
         // https://developers.google.com/youtube/v3/docs/videoCategories/list
@@ -352,14 +358,51 @@ class Youtube extends OAuth2 implements ShareInterface
         $media->setFileSize(filesize($localFilePath));
 
         // Read the media file and upload it chunk by chunk.
+        // 错误信息：
+        // {
+        //   "error": {
+        //     "code": 400,
+        //     "message": "The request metadata specifies an invalid video description.",
+        //     "errors": [
+        //       {
+        //         "message": "The request metadata specifies an invalid video description.",
+        //         "domain": "youtube.video",
+        //         "reason": "invalidDescription",
+        //         "location": "body.snippet.description",
+        //         "locationType": "other"
+        //       }
+        //     ]
+        //   }
+        // }
+        // {
+        //   "error": {
+        //     "code": 401,
+        //     "message": "Unauthorized",
+        //     "errors": [
+        //       {
+        //         "message": "Unauthorized",
+        //         "domain": "youtube.header",
+        //         "reason": "youtubeSignupRequired",
+        //         "location": "Authorization",
+        //         "locationType": "header"
+        //       }
+        //     ]
+        //   }
+        // }
         $status = false;
         $handle = fopen($localFilePath, "rb");
-        while (!$status && !feof($handle)) {
-            // $chunk = fread($handle, $chunkSizeBytes);
-            $chunk = $this->readVideoChunk($handle, $chunkSizeBytes);
-            $status = $media->nextChunk($chunk);
+        try {
+            while (!$status && !feof($handle)) {
+                // $chunk = fread($handle, $chunkSizeBytes);
+                $chunk = $this->readVideoChunk($handle, $chunkSizeBytes);
+                $status = $media->nextChunk($chunk);
+            }
+        } catch (\Google_Service_Exception $ex) {
+            $error = $ex->getErrors()[0]['message'] ?? '发布失败';
+            throw (new ShareException($error, $ex->getCode(), $ex))->setDevMsg($ex->getMessage())->setUnauthorized($ex->getCode() == 401);
+        } finally {
+            @fclose($handle);
         }
-        fclose($handle);
 
         // If you want to make other calls after the file upload, set setDefer back to false
         // $this->lib->setDefer(false);

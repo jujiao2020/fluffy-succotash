@@ -4,6 +4,7 @@ namespace Jcsp\SocialSdk\Client;
 
 
 use Jcsp\SocialSdk\Contract\ShareInterface;
+use Jcsp\SocialSdk\Exception\ShareException;
 use Jcsp\SocialSdk\Exception\SocialSdkException;
 use Jcsp\SocialSdk\Model\AccessToken;
 use Jcsp\SocialSdk\Model\AuthConfig;
@@ -370,7 +371,7 @@ class LinkedIn extends OAuth2 implements ShareInterface
         ]);
         $resBody = $res->getBody()->getContents();
         if ($res->getStatusCode() < 200 || $res->getStatusCode() > 300) {
-            throw new SocialSdkException('Share Video Failed:' . $resBody);
+            throw new ShareException('Share Video Failed:' . $resBody);
         }
         $responseData = json_decode($resBody, true);
 
@@ -382,7 +383,7 @@ class LinkedIn extends OAuth2 implements ShareInterface
         // 获取 post id
         $postId = $res->getHeader('X-RestLi-Id')[0] ?? $responseData['id'] ?? '';
         if (empty($postId)) {
-            throw new SocialSdkException('发布视频失败，无法获取 post id');
+            throw (new ShareException('发布失败'))->setDevMsg('发布视频失败，无法获取 post id');
         }
         $postUrl = "https://www.linkedin.com/feed/update/{$postId}";
         // 分享url格式： https://www.linkedin.com/feed/update/urn:li:share:6684377513214517248/

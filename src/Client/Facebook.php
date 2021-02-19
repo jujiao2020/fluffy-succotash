@@ -3,7 +3,9 @@
 namespace Jcsp\SocialSdk\Client;
 
 
+use Facebook\Exceptions\FacebookResponseException;
 use Jcsp\SocialSdk\Contract\ShareInterface;
+use Jcsp\SocialSdk\Exception\ShareException;
 use Jcsp\SocialSdk\Exception\SocialSdkException;
 use Jcsp\SocialSdk\Model\AccessToken;
 use Jcsp\SocialSdk\Model\AuthConfig;
@@ -38,6 +40,9 @@ class Facebook extends OAuth2 implements ShareInterface
         // 'user_birthday',
         // 'user_gender',
         // 'email',
+
+        'pages_manage_posts',
+        'pages_read_engagement',
 
         // // manage_pages 变成以下：
         // 'pages_manage_ads',
@@ -267,7 +272,7 @@ class Facebook extends OAuth2 implements ShareInterface
      * 视频分享
      * @param VideoShareParams $params
      * @return VideoShareResult
-     * @throws SocialSdkException
+     * @throws ShareException
      * @throws \Facebook\Exceptions\FacebookSDKException
      */
     public function shareVideo(VideoShareParams $params): VideoShareResult
@@ -283,20 +288,25 @@ class Facebook extends OAuth2 implements ShareInterface
         $data['description'] = $params->getDescription();
         $data['published'] = 'true';
         $targetPath = "/{$params->getSocialId()}/videos";
-        $response = $this->lib->uploadVideo($targetPath, $localFilePath, $data, $params->getAccessToken());
+
+        try {
+            $response = $this->lib->uploadVideo($targetPath, $localFilePath, $data, $params->getAccessToken());
+        } catch (FacebookResponseException $ex) {
+            throw (new ShareException($ex->getMessage(), $ex->getCode(), $ex))->setDevMsg($ex->getRawResponse())->setUnauthorized($ex->getCode() == 190);
+        }
 
         // 写日志
         $this->writeLog("info", "发布到主页成功:\n" . var_export($response, true));
 
         // 有错误抛出
         if (isset($response['error'])) {
-            throw new SocialSdkException($response['error']);
+            throw (new ShareException($response['error']))->setDevMsg($response['error']);
         }
 
         // 分享链接
         $postId = (string)($response['video_id'] ?? $response['id_str'] ?? $response['id'] ?? '');
         if (empty($postId)) {
-            throw new SocialSdkException("No found post id");
+            throw (new ShareException("No found post id"))->setDevMsg("No found post id");
         }
         $postUrl = 'https://www.facebook.com/' . $postId;
 

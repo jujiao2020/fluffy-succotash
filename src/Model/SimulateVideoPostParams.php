@@ -35,10 +35,22 @@ class SimulateVideoPostParams
     private $title = '';
 
     /**
+     * 视频关键词
+     * @var string
+     */
+    private $keywords = '';
+
+    /**
      * 视频描述
      * @var string
      */
     private $description = '';
+
+    /**
+     * 视频官网url
+     * @var string
+     */
+    private $videoWebSiteUrl = '';
 
     /**
      * 回调url
@@ -121,6 +133,22 @@ class SimulateVideoPostParams
     /**
      * @return string
      */
+    public function getKeywords(): string
+    {
+        return $this->keywords;
+    }
+
+    /**
+     * @param string $keywords
+     */
+    public function setKeywords(string $keywords): void
+    {
+        $this->keywords = $keywords;
+    }
+
+    /**
+     * @return string
+     */
     public function getDescription(): string
     {
         return $this->description;
@@ -132,6 +160,22 @@ class SimulateVideoPostParams
     public function setDescription(string $description): void
     {
         $this->description = $description;
+    }
+
+    /**
+     * @return string
+     */
+    public function getVideoWebSiteUrl(): string
+    {
+        return $this->videoWebSiteUrl;
+    }
+
+    /**
+     * @param string $videoWebSiteUrl
+     */
+    public function setVideoWebSiteUrl(string $videoWebSiteUrl): void
+    {
+        $this->videoWebSiteUrl = $videoWebSiteUrl;
     }
 
     /**

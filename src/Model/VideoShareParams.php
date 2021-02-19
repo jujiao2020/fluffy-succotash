@@ -31,6 +31,12 @@ class VideoShareParams
     private $title = '';
 
     /**
+     * 视频关键词
+     * @var string
+     */
+    private $keywords = '';
+
+    /**
      * 视频描述
      * @var string
      */
@@ -116,6 +122,22 @@ class VideoShareParams
     public function setTitle(string $title): void
     {
         $this->title = $title;
+    }
+
+    /**
+     * @return string
+     */
+    public function getKeywords(): string
+    {
+        return $this->keywords;
+    }
+
+    /**
+     * @param string $keywords
+     */
+    public function setKeywords(string $keywords): void
+    {
+        $this->keywords = $keywords;
     }
 
     /**

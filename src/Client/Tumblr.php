@@ -4,6 +4,7 @@ namespace Jcsp\SocialSdk\Client;
 
 
 use Jcsp\SocialSdk\Contract\ShareInterface;
+use Jcsp\SocialSdk\Exception\ShareException;
 use Jcsp\SocialSdk\Exception\SocialSdkException;
 use Jcsp\SocialSdk\Model\AccessToken;
 use Jcsp\SocialSdk\Model\AuthConfig;
@@ -209,7 +210,7 @@ class Tumblr extends OAuth1 implements ShareInterface
      * 视频分享
      * @param VideoShareParams $params
      * @return VideoShareResult
-     * @throws SocialSdkException
+     * @throws ShareException
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
     public function shareVideo(VideoShareParams $params): VideoShareResult
@@ -261,7 +262,7 @@ class Tumblr extends OAuth1 implements ShareInterface
         // TODO:暂时这样阻塞调用，以后尝试下开新进程处理
         if (!$isPostUrlCorrect) {
             $tryTime = 0;
-            while ($tryTime <= 5) {
+            while ($tryTime < 8) {
                 sleep(30);
                 $tryTime++;
                 $postUrl = $this->getPostUrl($blogName, $params->getTitle(), strtotime($timeStr), $postId);
@@ -270,7 +271,7 @@ class Tumblr extends OAuth1 implements ShareInterface
                 }
             }
             if (empty(trim($postUrl))) {
-                throw new SocialSdkException("尝试获取 post 链接失败，尝试次数：{$tryTime} 次");
+                throw (new ShareException('发布失败'))->setDevMsg("尝试获取 post 链接失败，尝试次数：{$tryTime} 次");
             }
         }
 

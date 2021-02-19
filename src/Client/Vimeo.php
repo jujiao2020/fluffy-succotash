@@ -4,6 +4,7 @@ namespace Jcsp\SocialSdk\Client;
 
 
 use Jcsp\SocialSdk\Contract\ShareInterface;
+use Jcsp\SocialSdk\Exception\ShareException;
 use Jcsp\SocialSdk\Exception\SocialSdkException;
 use Jcsp\SocialSdk\Model\AccessToken;
 use Jcsp\SocialSdk\Model\AuthConfig;
@@ -217,7 +218,7 @@ class Vimeo extends OAuth2 implements ShareInterface
      * 视频分享
      * @param VideoShareParams $params
      * @return VideoShareResult
-     * @throws SocialSdkException
+     * @throws ShareException
      * @throws \Vimeo\Exceptions\VimeoRequestException
      */
     public function shareVideo(VideoShareParams $params): VideoShareResult
@@ -236,14 +237,50 @@ class Vimeo extends OAuth2 implements ShareInterface
             'POST'
         );
 
-        // 日志记录
-        $this->writeLog("info", "分享视频成功:\n" . var_export($response, true));
+        // Error:
+        // array (
+        //   'body' =>
+        //   array (
+        //     'error' => 'Something strange occurred. Please contact the app owners.',
+        //     'link' => NULL,
+        //     'developer_message' => 'No user credentials were provided.',
+        //     'error_code' => 8003,
+        //   ),
+        //   'status' => 401,
+        //   'headers' =>
+        //   array (
+        //     'Connection' => 'keep-alive',
+        //     'Content-Length' => '157',
+        //     'Server' => 'nginx',
+        //     'Content-Type' => 'application/vnd.vimeo.error+json',
+        //     'Cache-Control' => 'private, no-store, no-cache',
+        //     'Strict-Transport-Security' => 'max-age=31536000; includeSubDomains; preload',
+        //     'WWW-Authenticate' => 'Bearer error="invalid_token"',
+        //     'Request-Hash' => '529b099f',
+        //     'X-BApp-Server' => 'api-v7265-4vgjh',
+        //     'X-Vimeo-DC' => 'ge',
+        //     'Accept-Ranges' => 'bytes',
+        //     'Via' => '1.1 varnish, 1.1 varnish',
+        //     'Date' => 'Wed, 20 Jan 2021 00:53:56 GMT',
+        //     'X-Served-By' => 'cache-bwi5124-BWI, cache-hkg17932-HKG',
+        //     'X-Cache' => 'MISS, MISS',
+        //     'X-Cache-Hits' => '0, 0',
+        //     'X-Timer' => 'S1611104037.569698,VS0,VE238',
+        //     'Vary' => 'Accept,Vimeo-Client-Id',
+        //   ),
+        // )
 
         // 分析结果
         $postUrl = $response['body']['link'] ?? '';
         if (empty($response) || $response['status'] != 201 || empty($postUrl)) {
-            throw new SocialSdkException($response['body']['error'] ?? 'Viemo分享失败');
+            $status = $response['status'] ?? 0;
+            $errMsg = $response['body']['error'] ?? '发布失败';
+            $devMsg = $response['body'] ? json_encode($response['body']) : '发布失败';
+            throw (new ShareException($errMsg, $status))->setDevMsg($devMsg)->setUnauthorized($status == 401);
         }
+
+        // 日志记录
+        $this->writeLog("info", "分享视频成功:\n" . var_export($response, true));
 
         // 视频 id
         $videoId = substr(strrchr($response['body']['uri'], "/"), 1);

@@ -71,10 +71,12 @@ class SimulateClient implements SimulateInterface
         $requestParams = [
             'video_url' => $params->getVideoUrl(),
             'title' => $params->getTitle(), // 100字符以内
+            'keywords' => $params->getKeywords(),
             'desc' => $params->getDescription(), // 视频描述，5000字以内
             'callback' => $params->getCallbackUrl(),
             'media' => strtolower($params->getSocialMediaName()),
             'user' => $params->getAccount(),
+            'video_website' => $params->getVideoWebSiteUrl(), // 视频官网 url
         ];
 
         // 分享到 channel 要传 social_id，分享到 user 不能传 channel

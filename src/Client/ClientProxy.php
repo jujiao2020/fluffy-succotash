@@ -35,7 +35,7 @@ class ClientProxy
         try {
             return $method->invoke($this->client, ...$arguments);
         } catch (\Exception $ex) {
-            $errMsg = "发生异常: {$ex->getMessage()}\n" . var_export($ex->getTraceAsString(), true);
+            $errMsg = "发生异常: {$ex}";
             if ($ref->hasMethod('writeLog')) {
                 $ref->getMethod('writeLog')->invoke($this->client, "error", $errMsg, $name);
             }
