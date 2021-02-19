@@ -316,6 +316,10 @@ class Youtube extends OAuth2 implements ShareInterface
         $keywordsStr = $params->getKeywords();
         $keywords = array_unique(array_filter(explode(',', $keywordsStr)));
         if (count($keywords) > 0) {
+            foreach ($keywords as &$keyword) {
+                $keyword = trim($keyword);
+            }
+            unset($keyword);
             $snippet->setTags($keywords);
         }
 
