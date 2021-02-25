@@ -16,6 +16,7 @@ use Jcsp\SocialSdk\Model\VideoShareResult;
 use VK\Exceptions\Api\VKApiAccessException;
 use VK\Exceptions\Api\VKApiAccessGroupException;
 use VK\Exceptions\Api\VKApiAccessGroupsException;
+use VK\Exceptions\Api\VKApiAuthException;
 
 class VK extends OAuth2 implements ShareInterface
 {
@@ -274,11 +275,7 @@ class VK extends OAuth2 implements ShareInterface
             'extended' => 1, // 1 — to return complete information about a user's communities 0 — to return a list of community IDs without any additional fields (default)
         ];
 
-        try {
-            $response = $this->lib->groups()->get($this->accessToken->getToken(), $params);
-        } catch (VKApiAccessException|VKApiAccessGroupException|VKApiAccessGroupsException $ex) {
-            throw (new ShareException($ex->getMessage(), $ex->getCode(), $ex))->setDevMsg($ex->getMessage())->setUnauthorized(true);
-        }
+        $response = $this->lib->groups()->get($this->accessToken->getToken(), $params);
 
         // 日志记录
         $this->writeLog("info", "groups.get: \n请求参数：" . var_export($params, true) . "\n响应结果" . var_export($response, true));
@@ -333,7 +330,12 @@ class VK extends OAuth2 implements ShareInterface
         if ($params->getIsPostToChannel()) {
             $data['group_id'] = $params->getSocialId();
         }
-        $address = $this->lib->video()->save($this->accessToken->getToken(), $data);
+        $address = [];
+        try {
+            $address = $this->lib->video()->save($this->accessToken->getToken(), $data);
+        } catch (VKApiAuthException|VKApiAccessException|VKApiAccessGroupException|VKApiAccessGroupsException $ex) {
+            throw (new ShareException($ex->getMessage(), $ex->getCode(), $ex))->setDevMsg($ex->getMessage())->setUnauthorized(true);
+        }
 
         // 日志记录
         $this->writeLog("info", "video.save: \n请求参数：" . var_export($data, true) . "\n响应结果" . var_export($address, true));
