@@ -1,7 +1,7 @@
 {
   "name": "jcsp/social-sdk",
   "type": "library",
-  "version": "v1.2.2",
+  "version": "v1.2.3",
   "keywords": [
     "php",
     "sdk"
