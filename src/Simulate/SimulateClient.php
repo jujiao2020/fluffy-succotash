@@ -73,6 +73,7 @@ class SimulateClient implements SimulateInterface
             'title' => $params->getTitle(), // 100字符以内
             'keywords' => $params->getKeywords(),
             'desc' => $params->getDescription(), // 视频描述，5000字以内
+            'thumbnail' => $params->getThumbnailUrl(), // 缩略图url
             'callback' => $params->getCallbackUrl(),
             'media' => strtolower($params->getSocialMediaName()),
             'user' => $params->getAccount(),

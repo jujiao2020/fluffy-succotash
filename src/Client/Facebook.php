@@ -41,8 +41,10 @@ class Facebook extends OAuth2 implements ShareInterface
         // 'user_gender',
         // 'email',
 
+        'pages_read_user_content',
         'pages_manage_posts',
         'pages_read_engagement',
+        'pages_manage_engagement',
 
         // // manage_pages 变成以下：
         // 'pages_manage_ads',
@@ -215,7 +217,10 @@ class Facebook extends OAuth2 implements ShareInterface
         $userProfile->setPictureUrl((string)($graphUser->getPicture() ?? ''));
         $userProfile->setFullName((string)($graphUser->getName() ?? ''));
         $userProfile->setEmail((string)($graphUser->getEmail() ?? ''));
-        $userProfile->setBirthday($graphUser->getBirthday()->getTimestamp());
+        if (!empty($graphUser->getBirthday())) {
+            $userProfile->setBirthday($graphUser->getBirthday()->getTimestamp());
+        }
+        $userProfile->setLink((string)($graphUser->getLink() ?? ''));
         $userProfile->setParams($graphUser->asArray() ?? []);
 
         return $userProfile;
@@ -247,7 +252,7 @@ class Facebook extends OAuth2 implements ShareInterface
     public function getShareChannelList(): array
     {
         // 获取主页
-        $response = $this->lib->get('/me/accounts?type=page', $this->accessToken->getToken());
+        $response = $this->lib->get('/me/accounts?type=page&fields=id,name,link,picture,access_token', $this->accessToken->getToken());
         $pages = $response->getGraphEdge()->asArray();
 
         // 写日志
@@ -259,7 +264,8 @@ class Facebook extends OAuth2 implements ShareInterface
             $channel = new Channel();
             $channel->setId((string)($page['id'] ?? ''));
             $channel->setName((string)($page['name'] ?? ''));
-            $channel->setUrl("");
+            $channel->setUrl((string)($page['link'] ?? ''));
+            $channel->setImgUrl((string)($page['picture']['data']['url'] ?? ''));
             $channel->setToken((string)($page['access_token'] ?? ''));
             $channel->setParams($page);
             $channelList[] = $channel;
@@ -277,6 +283,7 @@ class Facebook extends OAuth2 implements ShareInterface
      */
     public function shareVideo(VideoShareParams $params): VideoShareResult
     {
+        // https://developers.facebook.com/docs/graph-api/reference/video#Creating
         // https://github.com/facebookarchive/php-graph-sdk/blob/master/docs/reference/Facebook.md#uploadvideo
 
         // 下载视频到本地
@@ -286,6 +293,10 @@ class Facebook extends OAuth2 implements ShareInterface
         $data = [];
         $data['title'] = $params->getTitle();
         $data['description'] = $params->getDescription();
+        if (!empty($params->getThumbnailUrl())) {
+            // 需要权限：pages_read_user_content, pages_manage_engagement
+            $data['thumb'] = $this->lib->fileToUpload($params->getThumbnailUrl());
+        }
         $data['published'] = 'true';
         $targetPath = "/{$params->getSocialId()}/videos";
 
