@@ -46,6 +46,12 @@ class SimulatePostTask
     private $info = '';
 
     /**
+     * 错误截图链接
+     * @var string
+     */
+    private $errScreenShotUrl = '';
+
+    /**
      * 分享链接（发布成功才有）
      * @var string
      */
@@ -119,6 +125,22 @@ class SimulatePostTask
     public function setInfo(string $info): void
     {
         $this->info = $info;
+    }
+
+    /**
+     * @return string
+     */
+    public function getErrScreenShotUrl(): string
+    {
+        return $this->errScreenShotUrl;
+    }
+
+    /**
+     * @param string $errScreenShotUrl
+     */
+    public function setErrScreenShotUrl(string $errScreenShotUrl): void
+    {
+        $this->errScreenShotUrl = $errScreenShotUrl;
     }
 
     /**

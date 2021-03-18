@@ -157,6 +157,7 @@ class SimulateClient implements SimulateInterface
         $task->setTaskStatus($taskStatus);
         $task->setMsg((string)($requestParams['msg'] ?? ''));
         $task->setInfo((string)($requestParams['info'] ?? ''));
+        $task->setErrScreenShotUrl((string)($requestParams['err_screen_shot_url'] ?? ''));
         $task->setPostUrl((string)($requestParams['url'] ?? ''));
         $task->setCallbackUrl('');
         return $task;

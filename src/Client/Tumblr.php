@@ -331,8 +331,10 @@ class Tumblr extends OAuth1 implements ShareInterface
      */
     public function asyncToGetUrl(VideoShareParams $params, VideoShareResult $result): string
     {
-        $genesisPostId = $result->getId();
-        if (empty($genesisPostId)) {
+        $originPostIdStr = $result->getId();
+        $uploadTimestamp = $result->getCreatedTime();
+
+        if (empty($originPostIdStr)) {
             throw new \Exception('genesis_post_id 不能为空');
         }
 
@@ -350,11 +352,26 @@ class Tumblr extends OAuth1 implements ShareInterface
         // 分析结果，找出匹配的 post 和 post url
         $posts = $res->posts ?? [];
         $postUrl = '';
+
+        // 先用这个匹配
         foreach ($posts as $post) {
-            if ($post->genesis_post_id == $genesisPostId) {
+            $genesisPostId = $post->genesis_post_id ?? '';
+            if (!empty($genesisPostId) && $genesisPostId == $originPostIdStr) {
                 $postUrl = $post->post_url ?? '';
                 // $postUrl = $post->short_url ?? '';
                 break;
+            }
+        }
+
+        // 如果没有，就用标题匹配
+        if (empty($postUrl)) {
+            foreach ($posts as $post) {
+                // 发现 summary 可以认为是视频上传时的 title ，用这个做依据
+                if ($post->timestamp >= $uploadTimestamp && $post->summary == $videoName && $post->id_string != $originPostIdStr) {
+                    $postUrl = $post->post_url ?? '';
+                    // $postUrl = $post->short_url ?? '';
+                    break;
+                }
             }
         }
 
