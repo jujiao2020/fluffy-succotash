@@ -283,7 +283,7 @@ class Vimeo extends OAuth2 implements ShareInterface
         $this->writeLog("info", "分享视频成功:\n" . var_export($response, true));
 
         // 视频 id
-        $videoId = substr(strrchr($response['body']['uri'], "/"), 1);
+        $videoId = (string)(substr(strrchr($response['body']['uri'], "/"), 1));
 
         // 构造数据
         $result = new VideoShareResult();
@@ -294,6 +294,58 @@ class Vimeo extends OAuth2 implements ShareInterface
         $result->setUrl($postUrl);
         $result->setCreatedTime(time());
         return $result;
+    }
+
+    /**
+     * 异步获取视频分享链接
+     * @param VideoShareParams $params
+     * @param VideoShareResult $result
+     * @return string
+     */
+    public function asyncToGetUrl(VideoShareParams $params, VideoShareResult $result): string
+    {
+        return "";
+    }
+
+    /**
+     * 设置视频缩略图
+     * @param string $videoId
+     * @param string $thumbnailUrl
+     */
+    public function setThumbnail(string $videoId, string $thumbnailUrl): void
+    {
+        // https://developer.vimeo.com/api/upload/thumbnails#uploading-a-thumbnail
+        // For best results, we recommend that you send us a common web format like JPEG, PNG, or GIF instead of something fancy.
+
+        // 上传完视频后，不能够立即设置视频缩略图，会报错：{"Status":"failure","Notes":"500 Internal Server Error","Path":"/video/xxxxxxxx"}
+
+        $localPath = '';
+        try {
+            $localPath = $this->downloadFile($thumbnailUrl);
+
+            // 1. Get the URI of the thumbnail
+            $response = $this->lib->request("/videos/{$videoId}", [], 'GET');
+            $pictureUrl = $response['body']['metadata']['connections']['pictures']['uri'] ?? '';
+            if (empty($pictureUrl)) {
+                throw new \Exception("缺少缩略图上传路径, Response: " . json_encode($response, JSON_UNESCAPED_UNICODE));
+            }
+            $this->writeLog("info", "获取 pictures_uri: video_id: {$videoId}, pictures_uri: {$pictureUrl}");
+
+            // 2. Get the upload link for the thumbnail
+            // 3. Upload the thumbnail image file
+            // 4. Set the thumbnail as active
+            $link = $this->lib->uploadImage($pictureUrl, $localPath, true);
+
+            // 写日志
+            $this->writeLog("info", "缩略图上传成功: video_id: {$videoId}, thumbnailUrl: {$thumbnailUrl}, pictures_uri: {$pictureUrl}, upload_link: {$link}");
+        } catch (\Exception $ex) {
+            // 写日志
+            $this->writeLog("error", "缩略图上传失败: video_id: {$videoId}, thumbnailUrl: {$thumbnailUrl}, Error: " . $ex->getMessage());
+        } finally {
+            if (!empty($localPath)) {
+                @unlink($localPath);
+            }
+        }
     }
 
 }

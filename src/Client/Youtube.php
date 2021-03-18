@@ -317,12 +317,13 @@ class Youtube extends OAuth2 implements ShareInterface
         $snippet->setDescription($params->getDescription());
 
         $keywordsStr = $params->getKeywords();
-        $keywords = array_unique(array_filter(explode(',', $keywordsStr)));
+        $keywords = explode(',', $keywordsStr);
         if (count($keywords) > 0) {
             foreach ($keywords as &$keyword) {
                 $keyword = trim($keyword);
             }
             unset($keyword);
+            $keywords = array_merge(array_unique(array_filter($keywords)));
             $snippet->setTags($keywords);
         }
 
@@ -465,6 +466,17 @@ class Youtube extends OAuth2 implements ShareInterface
             }
         }
         return $giantChunk;
+    }
+
+    /**
+     * 异步获取视频分享链接
+     * @param VideoShareParams $params
+     * @param VideoShareResult $result
+     * @return string
+     */
+    public function asyncToGetUrl(VideoShareParams $params, VideoShareResult $result): string
+    {
+        return "";
     }
 
     /**

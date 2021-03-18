@@ -216,4 +216,24 @@ class Pinterest extends OAuth2 implements ShareInterface
         return $result;
     }
 
+    /**
+     * 异步获取视频分享链接
+     * @param VideoShareParams $params
+     * @param VideoShareResult $result
+     * @return string
+     */
+    public function asyncToGetUrl(VideoShareParams $params, VideoShareResult $result): string
+    {
+        return "";
+    }
+
+    /**
+     * 设置视频缩略图
+     * @param string $videoId
+     * @param string $thumbnailUrl
+     */
+    public function setThumbnail(string $videoId, string $thumbnailUrl): void
+    {
+    }
+
 }

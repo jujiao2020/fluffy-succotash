@@ -37,4 +37,12 @@ interface ShareInterface extends AuthorizationInterface, UserInterface
      */
     public function shareVideo(VideoShareParams $params): VideoShareResult;
 
+    /**
+     * 异步获取视频分享链接
+     * @param VideoShareParams $params
+     * @param VideoShareResult $result
+     * @return string
+     */
+    public function asyncToGetUrl(VideoShareParams $params, VideoShareResult $result): string;
+
 }
