@@ -274,9 +274,11 @@ class Vimeo extends OAuth2 implements ShareInterface
         $postUrl = $response['body']['link'] ?? '';
         if (empty($response) || $response['status'] != 201 || empty($postUrl)) {
             $status = $response['status'] ?? 0;
+            $errorCode = $response['body']['error_code'] ?? '';
+            $isUnrecognizedAccessToken = $status == 401 && $errorCode == 8003;
             $errMsg = $response['body']['error'] ?? '发布失败';
-            $devMsg = $response['body'] ? json_encode($response['body']) : '发布失败';
-            throw (new ShareException($errMsg, $status))->setDevMsg($devMsg)->setUnauthorized($status == 401);
+            $devMsg = json_encode($response, JSON_UNESCAPED_UNICODE) ?: '';
+            throw (new ShareException($errMsg, $status))->setDevMsg($devMsg)->setUnauthorized($isUnrecognizedAccessToken);
         }
 
         // 日志记录
@@ -284,6 +286,19 @@ class Vimeo extends OAuth2 implements ShareInterface
 
         // 视频 id
         $videoId = (string)(substr(strrchr($response['body']['uri'], "/"), 1));
+
+        // 处理缩略图
+        if (!empty($params->getThumbnailUrl())) {
+            $tryTime = 0;
+            while ($tryTime < 4) {
+                sleep(30);
+                $tryTime++;
+                $this->setThumbnail($videoId, $params->getThumbnailUrl());
+                if (!empty(trim($postUrl))) {
+                    break;
+                }
+            }
+        }
 
         // 构造数据
         $result = new VideoShareResult();
