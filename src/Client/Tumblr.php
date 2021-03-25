@@ -237,7 +237,11 @@ class Tumblr extends OAuth1 implements ShareInterface
             'data' => $params->getVideoUrl(), // path is like the url of video I've uploaded，可以是本地，也可以是远程链接
         ];
         $this->lib->getRequestHandler()->setBaseUrl(self::API_BASE_URL);
-        $res = $this->lib->createPost($blogName, $data);
+        try {
+            $res = $this->lib->createPost($blogName, $data);
+        } catch (\Tumblr\API\RequestException $ex) {
+
+        }
 
         // 写日志
         $this->writeLog("info", "分享视频成功:\n" . var_export($res, true));
