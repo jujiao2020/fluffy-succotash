@@ -3,6 +3,7 @@
 namespace Jcsp\SocialSdk\Client;
 
 
+use Facebook\Exceptions\FacebookAuthenticationException;
 use Facebook\Exceptions\FacebookResponseException;
 use Jcsp\SocialSdk\Contract\ShareInterface;
 use Jcsp\SocialSdk\Exception\ShareException;
@@ -293,9 +294,12 @@ class Facebook extends OAuth2 implements ShareInterface
         $data = [];
         $data['title'] = $params->getTitle();
         $data['description'] = $params->getDescription();
+        $thumbLocalPath = '';
         if (!empty($params->getThumbnailUrl())) {
             // 需要权限：pages_read_user_content, pages_manage_engagement
-            $data['thumb'] = $this->lib->fileToUpload($params->getThumbnailUrl());
+            // $data['thumb'] = $this->lib->fileToUpload($params->getThumbnailUrl()); // 有几率出现异常：stream_get_contents(): SSL: Connection reset by peer
+            $thumbLocalPath = $this->downloadFile($params->getThumbnailUrl());
+            $data['thumb'] = $this->lib->fileToUpload($thumbLocalPath);
         }
         $data['published'] = 'true';
         $targetPath = "/{$params->getSocialId()}/videos";
@@ -303,7 +307,9 @@ class Facebook extends OAuth2 implements ShareInterface
         try {
             $response = $this->lib->uploadVideo($targetPath, $localFilePath, $data, $params->getAccessToken());
         } catch (FacebookResponseException $ex) {
-            throw (new ShareException($ex->getMessage(), $ex->getCode(), $ex))->setDevMsg($ex->getRawResponse())->setUnauthorized($ex->getCode() == 190);
+            throw (new ShareException($ex->getMessage(), $ex->getCode(), $ex))->setDevMsg($ex->getRawResponse())->setUnauthorized(in_array($ex->getCode(), [100, 102, 190]));
+        } catch (FacebookAuthenticationException $ex) {
+            throw (new ShareException($ex->getMessage(), $ex->getCode(), $ex))->setDevMsg($ex->getMessage())->setUnauthorized(true);
         }
 
         // 写日志
@@ -329,6 +335,12 @@ class Facebook extends OAuth2 implements ShareInterface
         $result->setThumbnailUrl('');
         $result->setUrl($postUrl);
         $result->setCreatedTime(time());
+
+        // 删除临时缩略图文件
+        if (!empty($thumbLocalPath)) {
+            @unlink($thumbLocalPath);
+        }
+
         return $result;
     }
 
