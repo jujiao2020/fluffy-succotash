@@ -307,7 +307,7 @@ class Facebook extends OAuth2 implements ShareInterface
         try {
             $response = $this->lib->uploadVideo($targetPath, $localFilePath, $data, $params->getAccessToken());
         } catch (FacebookResponseException $ex) {
-            throw (new ShareException($ex->getMessage(), $ex->getCode(), $ex))->setDevMsg($ex->getRawResponse())->setUnauthorized(in_array($ex->getCode(), [100, 102, 190]));
+            throw (new ShareException($ex->getMessage(), $ex->getCode(), $ex))->setDevMsg($ex->getRawResponse())->setUnauthorized(in_array($ex->getCode(), [102, 190]));
         } catch (FacebookAuthenticationException $ex) {
             throw (new ShareException($ex->getMessage(), $ex->getCode(), $ex))->setDevMsg($ex->getMessage())->setUnauthorized(true);
         }
