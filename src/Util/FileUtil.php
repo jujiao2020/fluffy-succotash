@@ -19,7 +19,7 @@ class FileUtil
         }
 
         // 生成文件路径
-        $fileExt = strtolower(pathinfo($fileUrl, PATHINFO_EXTENSION));
+        $fileExt = strtolower(pathinfo(parse_url($fileUrl)['path'] ?? '', PATHINFO_EXTENSION));
         $fileName = time() . rand() . '.' . $fileExt;
         $filePath = $dirPath . '/' . $fileName;
 

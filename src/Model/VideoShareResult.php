@@ -42,6 +42,12 @@ class VideoShareResult
     private $createdTime = '';
 
     /**
+     * 是否需要等待一段时间，再异步获取视频链接
+     * @var bool
+     */
+    private $asyncToGetUrl = false;
+
+    /**
      * @return string
      */
     public function getId(): string
@@ -135,6 +141,22 @@ class VideoShareResult
     public function setCreatedTime(int $createdTime): void
     {
         $this->createdTime = $createdTime;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isAsyncToGetUrl(): bool
+    {
+        return $this->asyncToGetUrl;
+    }
+
+    /**
+     * @param bool $asyncToGetUrl
+     */
+    public function setAsyncToGetUrl(bool $asyncToGetUrl): void
+    {
+        $this->asyncToGetUrl = $asyncToGetUrl;
     }
 
 }

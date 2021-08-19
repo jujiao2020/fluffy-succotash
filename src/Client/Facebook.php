@@ -3,6 +3,7 @@
 namespace Jcsp\SocialSdk\Client;
 
 
+use Facebook\Exceptions\FacebookAuthenticationException;
 use Facebook\Exceptions\FacebookResponseException;
 use Jcsp\SocialSdk\Contract\ShareInterface;
 use Jcsp\SocialSdk\Exception\ShareException;
@@ -41,8 +42,10 @@ class Facebook extends OAuth2 implements ShareInterface
         // 'user_gender',
         // 'email',
 
+        'pages_read_user_content',
         'pages_manage_posts',
         'pages_read_engagement',
+        'pages_manage_engagement',
 
         // // manage_pages 变成以下：
         // 'pages_manage_ads',
@@ -215,7 +218,10 @@ class Facebook extends OAuth2 implements ShareInterface
         $userProfile->setPictureUrl((string)($graphUser->getPicture() ?? ''));
         $userProfile->setFullName((string)($graphUser->getName() ?? ''));
         $userProfile->setEmail((string)($graphUser->getEmail() ?? ''));
-        $userProfile->setBirthday($graphUser->getBirthday()->getTimestamp());
+        if (!empty($graphUser->getBirthday())) {
+            $userProfile->setBirthday($graphUser->getBirthday()->getTimestamp());
+        }
+        $userProfile->setLink((string)($graphUser->getLink() ?? ''));
         $userProfile->setParams($graphUser->asArray() ?? []);
 
         return $userProfile;
@@ -247,7 +253,7 @@ class Facebook extends OAuth2 implements ShareInterface
     public function getShareChannelList(): array
     {
         // 获取主页
-        $response = $this->lib->get('/me/accounts?type=page', $this->accessToken->getToken());
+        $response = $this->lib->get('/me/accounts?type=page&fields=id,name,link,picture,access_token', $this->accessToken->getToken());
         $pages = $response->getGraphEdge()->asArray();
 
         // 写日志
@@ -259,7 +265,8 @@ class Facebook extends OAuth2 implements ShareInterface
             $channel = new Channel();
             $channel->setId((string)($page['id'] ?? ''));
             $channel->setName((string)($page['name'] ?? ''));
-            $channel->setUrl("");
+            $channel->setUrl((string)($page['link'] ?? ''));
+            $channel->setImgUrl((string)($page['picture']['data']['url'] ?? ''));
             $channel->setToken((string)($page['access_token'] ?? ''));
             $channel->setParams($page);
             $channelList[] = $channel;
@@ -277,6 +284,7 @@ class Facebook extends OAuth2 implements ShareInterface
      */
     public function shareVideo(VideoShareParams $params): VideoShareResult
     {
+        // https://developers.facebook.com/docs/graph-api/reference/video#Creating
         // https://github.com/facebookarchive/php-graph-sdk/blob/master/docs/reference/Facebook.md#uploadvideo
 
         // 下载视频到本地
@@ -286,13 +294,22 @@ class Facebook extends OAuth2 implements ShareInterface
         $data = [];
         $data['title'] = $params->getTitle();
         $data['description'] = $params->getDescription();
+        $thumbLocalPath = '';
+        if (!empty($params->getThumbnailUrl())) {
+            // 需要权限：pages_read_user_content, pages_manage_engagement
+            // $data['thumb'] = $this->lib->fileToUpload($params->getThumbnailUrl()); // 有几率出现异常：stream_get_contents(): SSL: Connection reset by peer
+            $thumbLocalPath = $this->downloadFile($params->getThumbnailUrl());
+            $data['thumb'] = $this->lib->fileToUpload($thumbLocalPath);
+        }
         $data['published'] = 'true';
         $targetPath = "/{$params->getSocialId()}/videos";
 
         try {
             $response = $this->lib->uploadVideo($targetPath, $localFilePath, $data, $params->getAccessToken());
         } catch (FacebookResponseException $ex) {
-            throw (new ShareException($ex->getMessage(), $ex->getCode(), $ex))->setDevMsg($ex->getRawResponse())->setUnauthorized($ex->getCode() == 190);
+            throw (new ShareException($ex->getMessage(), $ex->getCode(), $ex))->setDevMsg($ex->getRawResponse())->setUnauthorized(in_array($ex->getCode(), [102, 190]));
+        } catch (FacebookAuthenticationException $ex) {
+            throw (new ShareException($ex->getMessage(), $ex->getCode(), $ex))->setDevMsg($ex->getMessage())->setUnauthorized(true);
         }
 
         // 写日志
@@ -318,7 +335,33 @@ class Facebook extends OAuth2 implements ShareInterface
         $result->setThumbnailUrl('');
         $result->setUrl($postUrl);
         $result->setCreatedTime(time());
+
+        // 删除临时缩略图文件
+        if (!empty($thumbLocalPath)) {
+            @unlink($thumbLocalPath);
+        }
+
         return $result;
+    }
+
+    /**
+     * 异步获取视频分享链接
+     * @param VideoShareParams $params
+     * @param VideoShareResult $result
+     * @return string
+     */
+    public function asyncToGetUrl(VideoShareParams $params, VideoShareResult $result): string
+    {
+        return "";
+    }
+
+    /**
+     * 设置视频缩略图
+     * @param string $videoId
+     * @param string $thumbnailUrl
+     */
+    public function setThumbnail(string $videoId, string $thumbnailUrl): void
+    {
     }
 
 }

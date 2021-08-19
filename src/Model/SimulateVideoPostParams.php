@@ -47,6 +47,12 @@ class SimulateVideoPostParams
     private $description = '';
 
     /**
+     * 视频缩略图URL
+     * @var string
+     */
+    private $thumbnailUrl = '';
+
+    /**
      * 视频官网url
      * @var string
      */
@@ -160,6 +166,22 @@ class SimulateVideoPostParams
     public function setDescription(string $description): void
     {
         $this->description = $description;
+    }
+
+    /**
+     * @return string
+     */
+    public function getThumbnailUrl(): string
+    {
+        return $this->thumbnailUrl;
+    }
+
+    /**
+     * @param string $thumbnailUrl
+     */
+    public function setThumbnailUrl(string $thumbnailUrl): void
+    {
+        $this->thumbnailUrl = $thumbnailUrl;
     }
 
     /**

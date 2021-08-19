@@ -285,6 +285,9 @@ class Youtube extends OAuth2 implements ShareInterface
             if (!empty($item->getId())) {
                 $channel->setUrl("https://www.youtube.com/channel/{$item->getId()}");
             }
+            if (!empty($snippet->getThumbnails()) && !empty($snippet->getThumbnails()->getDefault())) {
+                $channel->setImgUrl((string)($snippet->getThumbnails()->getDefault()->getUrl() ?? ''));
+            }
             $channel->setToken((string)($page['access_token'] ?? ''));
             $params = json_decode(json_encode($item->toSimpleObject()), true);
             $channel->setParams($params);
@@ -314,12 +317,13 @@ class Youtube extends OAuth2 implements ShareInterface
         $snippet->setDescription($params->getDescription());
 
         $keywordsStr = $params->getKeywords();
-        $keywords = array_unique(array_filter(explode(',', $keywordsStr)));
+        $keywords = explode(',', $keywordsStr);
         if (count($keywords) > 0) {
             foreach ($keywords as &$keyword) {
                 $keyword = trim($keyword);
             }
             unset($keyword);
+            $keywords = array_merge(array_unique(array_filter($keywords)));
             $snippet->setTags($keywords);
         }
 
@@ -409,12 +413,12 @@ class Youtube extends OAuth2 implements ShareInterface
         }
 
         // If you want to make other calls after the file upload, set setDefer back to false
-        // $this->lib->setDefer(false);
+        $this->lib->setDefer(false);
 
-        // // 处理缩略图
-        // if (!empty($params->getThumbnailUrl())) {
-        //     $this->setThumbnail((string)$status['id'], $chunkSizeBytes, $opts, $params->getThumbnailUrl());
-        // }
+        // 处理缩略图
+        if (!empty($params->getThumbnailUrl())) {
+            $this->setThumbnail((string)$status['id'], $params->getThumbnailUrl());
+        }
 
         // $status：
         //   array (
@@ -462,6 +466,175 @@ class Youtube extends OAuth2 implements ShareInterface
             }
         }
         return $giantChunk;
+    }
+
+    /**
+     * 异步获取视频分享链接
+     * @param VideoShareParams $params
+     * @param VideoShareResult $result
+     * @return string
+     */
+    public function asyncToGetUrl(VideoShareParams $params, VideoShareResult $result): string
+    {
+        return "";
+    }
+
+    /**
+     * 设置视频缩略图
+     * @param string $videoId
+     * @param string $thumbnailUrl
+     */
+    public function setThumbnail(string $videoId, string $thumbnailUrl): void
+    {
+        // https://developers.google.com/youtube/v3/docs/thumbnails/set
+        // Maximum file size: 2MB
+        // Accepted Media MIME types: image/jpeg, image/png, application/octet-stream
+        // Quota impact: A call to this method has a quota cost of approximately 50 units.
+
+        try {
+            // Define service object for making API requests.
+            $service = new \Google_Service_YouTube($this->lib);
+
+            // The maximum file size for this operation is 2097152.
+            $response = $service->thumbnails->set(
+                $videoId,
+                [
+                    'data' => file_get_contents($thumbnailUrl),
+                    'mimeType' => 'application/octet-stream',
+                    'uploadType' => 'multipart'
+                ]
+            );
+
+            // 写日志
+            $this->writeLog("info", "缩略图上传成功: video_id: {$videoId}, thumbnailUrl: {$thumbnailUrl}, Result：\n" . json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+
+        } catch (\Exception $ex) {
+            // 写日志
+            $this->writeLog("error", "缩略图上传失败: video_id: {$videoId}, thumbnailUrl: {$thumbnailUrl}, Error: " . $ex->getMessage());
+        }
+
+        // {
+        //   "kind": "youtube#thumbnailSetResponse",
+        //   "etag": etag,
+        //   "items": [
+        //     thumbnail resource
+        //   ]
+        // }
+
+        // {
+        //     "etag": "wck61a27aeKnJdUzKjGGqHggTbQ",
+        //     "eventId": null,
+        //     "kind": "youtube#thumbnailSetResponse",
+        //     "visitorId": null,
+        //     "items": [
+        //         {
+        //             "default": {
+        //                 "height": 90,
+        //                 "url": "https:\/\/i.ytimg.com\/vi\/fGMe1vgmOjw\/default.jpg",
+        //                 "width": 120
+        //             },
+        //             "medium": {
+        //                 "height": 180,
+        //                 "url": "https:\/\/i.ytimg.com\/vi\/fGMe1vgmOjw\/mqdefault.jpg",
+        //                 "width": 320
+        //             },
+        //             "high": {
+        //                 "height": 360,
+        //                 "url": "https:\/\/i.ytimg.com\/vi\/fGMe1vgmOjw\/hqdefault.jpg",
+        //                 "width": 480
+        //             }
+        //         }
+        //     ]
+        // }
+
+        // Google_Service_YouTube_ThumbnailSetResponse::__set_state(array(
+        //    'collection_key' => 'items',
+        //    'etag' => 'wck61a27aeKnJdUzKjGGqHggTbQ',
+        //    'eventId' => NULL,
+        //    'itemsType' => 'Google_Service_YouTube_ThumbnailDetails',
+        //    'itemsDataType' => 'array',
+        //    'kind' => 'youtube#thumbnailSetResponse',
+        //    'visitorId' => NULL,
+        //    'internal_gapi_mappings' =>
+        //   array (
+        //   ),
+        //    'modelData' =>
+        //   array (
+        //   ),
+        //    'processed' =>
+        //   array (
+        //   ),
+        //    'items' =>
+        //   array (
+        //     0 =>
+        //     Google_Service_YouTube_ThumbnailDetails::__set_state(array(
+        //        'defaultType' => 'Google_Service_YouTube_Thumbnail',
+        //        'defaultDataType' => '',
+        //        'highType' => 'Google_Service_YouTube_Thumbnail',
+        //        'highDataType' => '',
+        //        'maxresType' => 'Google_Service_YouTube_Thumbnail',
+        //        'maxresDataType' => '',
+        //        'mediumType' => 'Google_Service_YouTube_Thumbnail',
+        //        'mediumDataType' => '',
+        //        'standardType' => 'Google_Service_YouTube_Thumbnail',
+        //        'standardDataType' => '',
+        //        'internal_gapi_mappings' =>
+        //       array (
+        //       ),
+        //        'modelData' =>
+        //       array (
+        //       ),
+        //        'processed' =>
+        //       array (
+        //       ),
+        //        'default' =>
+        //       Google_Service_YouTube_Thumbnail::__set_state(array(
+        //          'height' => 90,
+        //          'url' => 'https://i.ytimg.com/vi/fGMe1vgmOjw/default.jpg',
+        //          'width' => 120,
+        //          'internal_gapi_mappings' =>
+        //         array (
+        //         ),
+        //          'modelData' =>
+        //         array (
+        //         ),
+        //          'processed' =>
+        //         array (
+        //         ),
+        //       )),
+        //        'medium' =>
+        //       Google_Service_YouTube_Thumbnail::__set_state(array(
+        //          'height' => 180,
+        //          'url' => 'https://i.ytimg.com/vi/fGMe1vgmOjw/mqdefault.jpg',
+        //          'width' => 320,
+        //          'internal_gapi_mappings' =>
+        //         array (
+        //         ),
+        //          'modelData' =>
+        //         array (
+        //         ),
+        //          'processed' =>
+        //         array (
+        //         ),
+        //       )),
+        //        'high' =>
+        //       Google_Service_YouTube_Thumbnail::__set_state(array(
+        //          'height' => 360,
+        //          'url' => 'https://i.ytimg.com/vi/fGMe1vgmOjw/hqdefault.jpg',
+        //          'width' => 480,
+        //          'internal_gapi_mappings' =>
+        //         array (
+        //         ),
+        //          'modelData' =>
+        //         array (
+        //         ),
+        //          'processed' =>
+        //         array (
+        //         ),
+        //       )),
+        //     )),
+        //   ),
+
     }
 
 }

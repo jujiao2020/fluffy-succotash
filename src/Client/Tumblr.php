@@ -5,7 +5,6 @@ namespace Jcsp\SocialSdk\Client;
 
 use Jcsp\SocialSdk\Contract\ShareInterface;
 use Jcsp\SocialSdk\Exception\ShareException;
-use Jcsp\SocialSdk\Exception\SocialSdkException;
 use Jcsp\SocialSdk\Model\AccessToken;
 use Jcsp\SocialSdk\Model\AuthConfig;
 use Jcsp\SocialSdk\Model\Channel;
@@ -238,42 +237,44 @@ class Tumblr extends OAuth1 implements ShareInterface
         ];
         $this->lib->getRequestHandler()->setBaseUrl(self::API_BASE_URL);
         $res = $this->lib->createPost($blogName, $data);
-
         // 写日志
         $this->writeLog("info", "分享视频成功:\n" . var_export($res, true));
 
-        // 获取 post 链接，但因为要转码，此 id 不是最终的 id ，所以实际上是 404 的
+
+        // 获取视频状态和链接，如果状态不是 published 是 transcoding，此 id 不是最终的 id ，所以实际上此时拼凑的链接也是 404 的
+        $state = $res->state ?? '';
+        $asyncToGetUrl = strtolower($state) != 'published';
         $postId = (string)($res->id_string ?? $res->id ?? '');
         $postUrl = "https://{$blogName}.tumblr.com/post/{$postId}";
 
-        // 先请求一下上面拼接的链接，如果能正常访问，则认为这个链接正确。
-        $isPostUrlCorrect = false;
-        try {
-            $httpClient = new \GuzzleHttp\Client();
-            $response = $httpClient->request('GET', $postUrl);
-            if ($response->getStatusCode() == 200) {
-                $isPostUrlCorrect = true;
-            }
-        } catch (\Exception $ex) {
-            // GuzzleHttp 发现请求状态码大于等400会抛异常
-        }
-
-        // 如果链接无法正常访问，就定时查询当前 blog 的 post 列表，找到这次上传的视频 post
-        // TODO:暂时这样阻塞调用，以后尝试下开新进程处理
-        if (!$isPostUrlCorrect) {
-            $tryTime = 0;
-            while ($tryTime < 8) {
-                sleep(30);
-                $tryTime++;
-                $postUrl = $this->getPostUrl($blogName, $params->getTitle(), strtotime($timeStr), $postId);
-                if (!empty(trim($postUrl))) {
-                    break;
-                }
-            }
-            if (empty(trim($postUrl))) {
-                throw (new ShareException('发布失败'))->setDevMsg("尝试获取 post 链接失败，尝试次数：{$tryTime} 次");
-            }
-        }
+        // // 先请求一下上面拼接的链接，如果能正常访问，则认为这个链接正确。
+        // $isPostUrlCorrect = false;
+        // try {
+        //     $httpClient = new \GuzzleHttp\Client();
+        //     $response = $httpClient->request('GET', $postUrl);
+        //     if ($response->getStatusCode() == 200) {
+        //         $isPostUrlCorrect = true;
+        //     }
+        // } catch (\Exception $ex) {
+        //     // GuzzleHttp 发现请求状态码大于等400会抛异常
+        // }
+        //
+        // // 如果链接无法正常访问，就定时查询当前 blog 的 post 列表，找到这次上传的视频 post
+        // // TODO:暂时这样阻塞调用，以后尝试下开新进程处理
+        // if (!$isPostUrlCorrect) {
+        //     $tryTime = 0;
+        //     while ($tryTime < 8) {
+        //         sleep(30);
+        //         $tryTime++;
+        //         $postUrl = $this->getPostUrl($blogName, $params->getTitle(), strtotime($timeStr), $postId);
+        //         if (!empty(trim($postUrl))) {
+        //             break;
+        //         }
+        //     }
+        //     if (empty(trim($postUrl))) {
+        //         throw (new ShareException('发布失败'))->setDevMsg("尝试获取 post 链接失败，尝试次数：{$tryTime} 次");
+        //     }
+        // }
 
         // 构造数据
         $result = new VideoShareResult();
@@ -283,6 +284,7 @@ class Tumblr extends OAuth1 implements ShareInterface
         $result->setThumbnailUrl('');
         $result->setUrl($postUrl);
         $result->setCreatedTime(strtotime($timeStr));
+        $result->setAsyncToGetUrl($asyncToGetUrl);
         return $result;
     }
 
@@ -294,7 +296,7 @@ class Tumblr extends OAuth1 implements ShareInterface
      * @param string $originPostIdStr
      * @return string
      */
-    public function getPostUrl(string $blogName, string $videoName, int $uploadTimestamp, string $originPostIdStr): string
+    private function getPostUrl(string $blogName, string $videoName, int $uploadTimestamp, string $originPostIdStr): string
     {
         // 获取某个 blog 下的 post 列表
         $params = ['type' => 'video'];
@@ -316,6 +318,72 @@ class Tumblr extends OAuth1 implements ShareInterface
         }
 
         return $postUrl;
+    }
+
+    /**
+     * 异步获取视频分享链接
+     * @param VideoShareParams $params
+     * @param VideoShareResult $result
+     * @return string
+     * @throws \Exception
+     */
+    public function asyncToGetUrl(VideoShareParams $params, VideoShareResult $result): string
+    {
+        $originPostIdStr = $result->getId();
+        $uploadTimestamp = $result->getCreatedTime();
+
+        if (empty($originPostIdStr)) {
+            throw new \Exception('genesis_post_id 不能为空');
+        }
+
+        $videoName = $params->getTitle();
+        $blogName = $params->getDisplayName();
+
+        // 获取某个 blog 下的 post 列表
+        $params = ['type' => 'video'];
+        $res = $this->lib->getBlogPosts($blogName, $params);
+
+        // 写日志
+        $this->writeLog("info", "尝试抓取获取分享链接：videoName: {$videoName}， blogName:{$blogName}\n："
+            . json_encode($res, JSON_UNESCAPED_UNICODE));
+
+        // 分析结果，找出匹配的 post 和 post url
+        $posts = $res->posts ?? [];
+        $postUrl = '';
+
+        // 先用这个匹配
+        foreach ($posts as $post) {
+            $genesisPostId = $post->genesis_post_id ?? '';
+            if (!empty($genesisPostId) && $genesisPostId == $originPostIdStr) {
+                $postUrl = $post->post_url ?? '';
+                // $postUrl = $post->short_url ?? '';
+                break;
+            }
+        }
+
+        // 如果没有，就用标题匹配
+        if (empty($postUrl)) {
+            foreach ($posts as $post) {
+                // 发现 summary 可以认为是视频上传时的 title ，用这个做依据
+                if ($post->timestamp >= $uploadTimestamp && $post->summary == $videoName && $post->id_string != $originPostIdStr) {
+                    $postUrl = $post->post_url ?? '';
+                    // $postUrl = $post->short_url ?? '';
+                    break;
+                }
+            }
+        }
+
+        return $postUrl;
+    }
+
+    /**
+     * 设置视频缩略图
+     * @param string $videoId
+     * @param string $thumbnailUrl
+     */
+    public function setThumbnail(string $videoId, string $thumbnailUrl): void
+    {
+        // 不支持
     }
 
 }
